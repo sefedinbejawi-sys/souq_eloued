@@ -1,0 +1,6 @@
+{
+  "name": "AI Audio Robot",
+  "description": "نظام ذكي لإدارة وتوزيع الصوت داخل القاعات ومراقبة المناطق والميكروفونات بتقنية الذكاء الاصطناعي",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
