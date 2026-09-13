@@ -36,7 +36,7 @@ export const ControllerArchitectureView: React.FC<ControllerArchitectureViewProp
   const isAdmin = userRole === 'admin';
 
   const [deviceId, setDeviceId] = useState('CTRL-DSP-8800-ALGERIA');
-  const [secretToken, setSecretToken] = useState('sec_token_' + Math.random().toString(36).substring(2, 10));
+  const [secretToken, setSecretToken] = useState('');
   const [selectedRoomId, setSelectedRoomId] = useState(rooms[0]?.id || '');
   const [controllerName, setControllerName] = useState('قاعة المؤتمرات DSP 1');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,7 +75,6 @@ export const ControllerArchitectureView: React.FC<ControllerArchitectureViewProp
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           deviceId: deviceId.trim(),
-          secretToken: secretToken.trim(),
           roomId: selectedRoomId,
           name: controllerName.trim(),
           firmwareVersion: 'v2.5.0-Release',
@@ -85,11 +84,12 @@ export const ControllerArchitectureView: React.FC<ControllerArchitectureViewProp
       const data = await res.json();
 
       if (res.ok && data.success) {
+        setSecretToken(data.secretToken || '');
         setRegistrationResult({
           success: true,
           message:
             currentLang === 'ar'
-              ? `تم تسجيل الجهاز ${data.controller.deviceId} بنجاح وربطه بالقاعة.`
+              ? `تم تسجيل الجهاز ${data.controller.deviceId} بنجاح. احفظ السر الظاهر مرة واحدة بأمان.`
               : `Device ${data.controller.deviceId} registered successfully.`,
         });
         fetchRegisteredControllers();
@@ -117,8 +117,8 @@ export const ControllerArchitectureView: React.FC<ControllerArchitectureViewProp
   -d '{
     "deviceId": "${deviceId || 'CTRL-DSP-8800'}",
     "secretToken": "${secretToken || 'your_token'}",
-    "dspLoadPercent": 28,
-    "latencyMs": 1.45
+    "dspLoad": 28,
+    "latency": 1.45
   }'`;
 
   return (
@@ -244,12 +244,11 @@ export const ControllerArchitectureView: React.FC<ControllerArchitectureViewProp
 
             <div>
               <label className="text-xs text-neutral-400 block mb-1 font-mono">
-                {t.secureToken} (Pre-shared Token)
+                {t.secureToken} (Generated once by server)
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  required
                   disabled={!isAdmin}
                   value={secretToken}
                   onChange={(e) => setSecretToken(e.target.value)}
@@ -258,7 +257,7 @@ export const ControllerArchitectureView: React.FC<ControllerArchitectureViewProp
                 <button
                   type="button"
                   onClick={() =>
-                    setSecretToken('sec_token_' + Math.random().toString(36).substring(2, 10))
+                    setSecretToken(crypto.randomUUID().replaceAll('-', ''))
                   }
                   className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs rounded-lg font-mono transition"
                 >

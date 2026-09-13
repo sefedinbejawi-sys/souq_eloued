@@ -15,14 +15,21 @@
 ## قاعدة البيانات وRLS
 الملف `supabase/migrations/20260913000000_production_audio_platform.sql` ينشئ organizations وprofiles والكيانات الصوتية، ويضيف `organization_id` للعزل متعدد المستأجرين. سياسات RLS مبنية على `auth.uid()` عبر دوال `user_org_id()` و`user_role()`. سجل التدقيق append-only للمستخدمين، ولا يُسمح لهم بالتعديل أو الحذف.
 
+## التكامل الفعلي المنفذ
+تم تطبيق migration الإنتاج فعليًا على مشروع Supabase `qobfcfmnarkiaojvtwsc` والتحقق من تسجيل migration والجداول التسعة وتفعيل RLS عليها. تم التحقق من سياسات tenant reads وoperator updates وسياسة audit append-only. تم تفعيل Realtime فعليًا على `controllers` و`alerts` و`audio_readings`، وأضيفت لها migration محفوظة في المستودع.
+
+أضيفت نقطة دخول `api/index.ts` و`vercel.json` لتوجيه API إلى Express serverless بدل نشر واجهة Vite فقط. الواجهة تقرأ بيانات الإنتاج من Supabase وتعيد تحميلها عبر Realtime؛ لا يتم ملء Production ببيانات المحاكاة.
+
 ## الاختبارات
 - `npm install`: نجح.
 - `npm run lint`: نجح.
 - `npm run build`: نجح، مع تحذير حجم bundle قائم يحتاج code-splitting لاحقًا.
 - تم فحص إزالة الهويات الثابتة ونموذج Gemini غير المدعوم من طبقة الإنتاج.
 
+تم اختبار وجود RLS والسياسات وRealtime على المشروع الحقيقي. لم يتم اختبار Auth/CRUD عبر جلسة مستخدم حقيقية، ولا Controller registration/heartbeat، ولا تحليل Gemini، لعدم وجود مستخدم Auth ومفتاح service role ومفتاح Gemini وجهاز Hardware حقيقي ضمن الصلاحيات الحالية. لذلك لا ندّعي نجاح هذه المسارات.
+
 ## ما لم يُنفذ فعليًا
-لا يمكن اختبار RLS أو CRUD أو Realtime أو Gemini على بيانات حقيقية دون تزويد المشروع بعنوان Supabase ومفتاح anon ومفتاح service role ومفتاح Gemini. لذلك يرفض الخادم طلبات الإنتاج بوضوح عند غياب Supabase بدل عرض بيانات مختلقة. كما أن ربط Hardware الفعلي لم يُخترع؛ endpoint heartbeat جاهز لكنه لا يعرض المتحكم متصلًا قبل heartbeat موثق.
+لا تزال Environment Variables السرية في Vercel تحتاج إدخالًا يدويًا من مالك الحساب. عند غيابها يرفض الخادم طلبات الإنتاج بوضوح بدل عرض بيانات مختلقة. كما أن ربط Hardware الفعلي لم يُخترع؛ endpoint heartbeat جاهز لكنه لا يعرض المتحكم متصلًا قبل heartbeat موثق وحديث.
 
 ## الخطوة التالية لربط Hardware
 طبّق migration على مشروع Supabase، أنشئ profile وorganization، ثم عيّن أسرار البيئة في منصة النشر. سجّل المتحكم مرة واحدة من endpoint التسجيل، خزّن `secretToken` في الجهاز كسر، وأرسل heartbeat دوريًا مع telemetry موقعة/متحققة. بعد ذلك تُضاف كتابة `audio_readings` من gateway المتحكم وتُفعل Realtime على `controllers` و`alerts` و`audio_readings`.

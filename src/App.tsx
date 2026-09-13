@@ -67,6 +67,39 @@ export default function App() {
     document.documentElement.lang = currentLang;
   }, [currentLang]);
 
+  // Production data comes only from Supabase. Realtime refreshes the same source of truth.
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelled = false;
+    const loadProductionData = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+      const { data: profile } = await supabase.from('profiles').select('full_name,role').eq('id', auth.user.id).single();
+      if (!cancelled) setCurrentUser({ id: auth.user.id, email: auth.user.email || '', fullName: profile?.full_name || '', role: (profile?.role || 'viewer') as UserRole });
+      const [roomResult, zoneResult, micResult, alertResult, auditResult] = await Promise.all([
+        supabase.from('rooms').select('*').limit(500),
+        supabase.from('zones').select('*').limit(1000),
+        supabase.from('microphones').select('*').limit(1000),
+        supabase.from('alerts').select('*').order('created_at', { ascending: false }).limit(200),
+        supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(200),
+      ]);
+      if (cancelled) return;
+      setRooms((roomResult.data || []).map((r: any) => ({ ...r, masterVolume: r.master_volume, isMuted: r.is_muted, createdAt: r.created_at, updatedAt: r.updated_at })));
+      setZones((zoneResult.data || []).map((z: any) => ({ ...z, roomId: z.room_id, isMuted: z.is_muted, autoMode: z.auto_mode, currentLevelDb: z.current_level_db ?? -60, peakLevelDb: z.peak_level_db ?? -60, connectionStatus: 'offline', safeMinVol: 0, safeMaxVol: 100 })));
+      setMicrophones((micResult.data || []).map((m: any) => ({ ...m, roomId: m.room_id, zoneId: m.zone_id, isMuted: m.is_muted, signalLevel: 0, activity: 'inactive', lastActivityTime: m.last_telemetry_at })));
+      setAlerts((alertResult.data || []).map((a: any) => ({ ...a, roomId: a.room_id, roomName: '', titleAr: a.title, messageAr: a.message, createdAt: a.created_at })));
+      setAuditLogs((auditResult.data || []).map((a: any) => ({ ...a, userEmail: a.actor_email || '', userRole: a.actor_role || 'viewer', operationAr: a.operation, roomName: '', targetEntity: a.target || '', oldValue: JSON.stringify(a.old_value || ''), newValue: JSON.stringify(a.new_value || ''), timestamp: a.created_at, source: a.source === 'ai' ? 'AI' : 'Manual' })));
+      if (roomResult.data?.[0] && !selectedRoomId) setSelectedRoomId(roomResult.data[0].id);
+    };
+    void loadProductionData();
+    const channel = supabase.channel('audio-platform-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'controllers' }, loadProductionData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'alerts' }, loadProductionData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'audio_readings' }, loadProductionData)
+      .subscribe();
+    return () => { cancelled = true; void supabase.removeChannel(channel); };
+  }, [selectedRoomId]);
+
   // If in simulation mode, add subtle live VU meter activity
   useEffect(() => {
     if (systemMode !== 'simulation') return;
@@ -76,7 +109,9 @@ export default function App() {
         prevMics.map((mic) => {
           if (mic.isMuted || mic.status !== 'online') return mic;
           // Random slight audio signal fluctuation between 35 and 68%
-          const delta = Math.floor(Math.random() * 9) - 4;
+          const entropy = new Uint32Array(1);
+          crypto.getRandomValues(entropy);
+          const delta = (entropy[0] % 9) - 4;
           const newLevel = Math.max(10, Math.min(85, mic.signalLevel + delta));
           return { ...mic, signalLevel: newLevel };
         })
@@ -112,7 +147,7 @@ export default function App() {
     source: 'Manual' | 'AI' = 'Manual'
   ) => {
     const newLog: AuditLogItem = {
-      id: 'log_' + Date.now() + Math.random().toString(36).substring(2, 5),
+      id: crypto.randomUUID(),
       timestamp: new Date().toLocaleTimeString('ar-EG', { hour12: false }),
       userEmail: source === 'AI' ? 'ai-robot@myeloued.com' : currentUser.email,
       userRole: source === 'AI' ? 'system' : currentUser.role,
