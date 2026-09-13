@@ -39,26 +39,26 @@ import { isSupabaseConfigured, supabase } from './lib/supabase';
 export default function App() {
   // App-level state
   const [currentLang, setCurrentLang] = useState<AppLanguage>('ar');
-  const [systemMode, setSystemMode] = useState<SystemMode>('simulation');
+  const [systemMode, setSystemMode] = useState<SystemMode>(isSupabaseConfigured ? 'production' : 'simulation');
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Authenticated user state
   const [currentUser, setCurrentUser] = useState<UserProfile>({
-    id: 'usr_admin',
-    email: 'admin@myeloued.com',
-    fullName: 'المسؤول الصوتي العام',
-    role: 'admin',
+    id: '',
+    email: '',
+    fullName: '',
+    role: 'viewer',
   });
 
   // Audio entities state
-  const [rooms, setRooms] = useState<Room[]>([INITIAL_SIM_ROOM]);
-  const [selectedRoomId, setSelectedRoomId] = useState<string>(INITIAL_SIM_ROOM.id);
-  const [zones, setZones] = useState<Zone[]>(INITIAL_SIM_ZONES);
-  const [microphones, setMicrophones] = useState<Microphone[]>(INITIAL_SIM_MICS);
-  const [speakers, setSpeakers] = useState<Speaker[]>(INITIAL_SIM_SPEAKERS);
-  const [alerts, setAlerts] = useState<AlertItem[]>(INITIAL_SIM_ALERTS);
-  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>(INITIAL_SIM_AUDIT);
+  const [rooms, setRooms] = useState<Room[]>(isSupabaseConfigured ? [] : [INITIAL_SIM_ROOM]);
+  const [selectedRoomId, setSelectedRoomId] = useState<string>(isSupabaseConfigured ? '' : INITIAL_SIM_ROOM.id);
+  const [zones, setZones] = useState<Zone[]>(isSupabaseConfigured ? [] : INITIAL_SIM_ZONES);
+  const [microphones, setMicrophones] = useState<Microphone[]>(isSupabaseConfigured ? [] : INITIAL_SIM_MICS);
+  const [speakers, setSpeakers] = useState<Speaker[]>(isSupabaseConfigured ? [] : INITIAL_SIM_SPEAKERS);
+  const [alerts, setAlerts] = useState<AlertItem[]>(isSupabaseConfigured ? [] : INITIAL_SIM_ALERTS);
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>(isSupabaseConfigured ? [] : INITIAL_SIM_AUDIT);
   const [activeController, setActiveController] = useState<AudioController | null>(null);
 
   // Synchronize HTML dir & lang attributes with selected language
@@ -305,6 +305,7 @@ export default function App() {
 
   // Switch between Production Mode and Simulation Mode
   const handleToggleMode = (newMode: SystemMode) => {
+    if (newMode === 'production' && !isSupabaseConfigured) return;
     setSystemMode(newMode);
     logAction(
       'Switch System Mode',
@@ -568,14 +569,10 @@ export default function App() {
         currentLang={currentLang}
         currentUser={currentUser}
         onLoginSuccess={(user) => setCurrentUser(user)}
-        onLogout={() =>
-          setCurrentUser({
-            id: 'demo_viewer',
-            email: 'guest@myeloued.com',
-            fullName: 'زائر (Viewer)',
-            role: 'viewer',
-          })
-        }
+        onLogout={async () => {
+          if (supabase) await supabase.auth.signOut();
+          setCurrentUser({ id: '', email: '', fullName: '', role: 'viewer' });
+        }}
       />
     </div>
   );

@@ -53,7 +53,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             email,
             password,
             options: {
-              data: { full_name: fullName, role },
+              data: { full_name: fullName },
             },
           });
           if (error) throw error;
@@ -73,11 +73,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           });
           if (error) throw error;
           if (data.user) {
+            const { data: profile } = await supabase.from('profiles').select('full_name, role').eq('id', data.user.id).single();
             onLoginSuccess({
               id: data.user.id,
               email: data.user.email || email,
-              fullName: data.user.user_metadata?.full_name || 'مشغل الصوت',
-              role: data.user.user_metadata?.role || 'operator',
+              fullName: profile?.full_name || data.user.user_metadata?.full_name || 'مستخدم',
+              role: profile?.role || 'viewer',
             });
             onClose();
           }
@@ -88,33 +89,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setIsLoading(false);
       }
     } else {
-      // Local demo sign-in
-      setTimeout(() => {
-        onLoginSuccess({
-          id: 'user_' + Math.random().toString(36).substring(2, 7),
-          email: email || 'operator@myeloued.com',
-          fullName: fullName || (role === 'admin' ? 'مدير النظام' : 'مشغل الصوت'),
-          role,
-        });
-        setIsLoading(false);
-        onClose();
-      }, 300);
+      setErrorMessage('Supabase Auth غير مهيأ. لا يمكن تسجيل الدخول محليًا في وضع الإنتاج.');
+      setIsLoading(false);
     }
   };
 
-  const handleQuickDemoRole = (demoRole: UserRole) => {
-    onLoginSuccess({
-      id: 'demo_' + demoRole,
-      email: `${demoRole}@myeloued.com`,
-      fullName:
-        demoRole === 'admin'
-          ? 'المسؤول الصوتي (Admin)'
-          : demoRole === 'operator'
-          ? 'مشغل القاعة (Operator)'
-          : 'مراقب الصوت (Viewer)',
-      role: demoRole,
-    });
-    onClose();
+  const handleQuickDemoRole = (_demoRole: UserRole) => {
+    setErrorMessage('الأدوار التجريبية متاحة داخل Simulation فقط وليست هوية إنتاجية.');
   };
 
   return (

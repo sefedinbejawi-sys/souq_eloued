@@ -1,232 +1,46 @@
-import express from 'express';
-import path from 'path';
-import { GoogleGenAI } from '@google/genai';
+import 'dotenv/config';
+import crypto from 'node:crypto';
+import path from 'node:path';
+import express, { Request, Response, NextFunction } from 'express';
 import { createServer as createViteServer } from 'vite';
-import dotenv from 'dotenv';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { GoogleGenAI } from '@google/genai';
 
-dotenv.config();
-
+const PORT = Number(process.env.PORT || 3000);
 const app = express();
-const PORT = 3000;
+app.disable('x-powered-by');
+app.use(express.json({ limit: '64kb' }));
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase: SupabaseClient | null = supabaseUrl && serviceKey ? createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } }) : null;
+const production = process.env.NODE_ENV === 'production';
+const buckets = new Map<string, { count: number; resetAt: number }>();
+function sha256(value: string) { return crypto.createHash('sha256').update(value).digest('hex'); }
+function safeToken() { return crypto.randomBytes(32).toString('base64url'); }
+function requestId(req: Request) { return String(req.headers['x-request-id'] || crypto.randomUUID()); }
+function fail(res: Response, status: number, error: string, id?: string) { return res.status(status).json({ success: false, error, requestId: id }); }
+function rateLimit(limit: number, windowMs: number) { return (req: Request, res: Response, next: NextFunction) => { const key = `${req.ip}:${req.path}`; const now = Date.now(); const bucket = buckets.get(key); if (!bucket || bucket.resetAt <= now) buckets.set(key, { count: 1, resetAt: now + windowMs }); else if (++bucket.count > limit) return fail(res, 429, 'Too many requests.', requestId(req)); next(); }; }
+function tokenMatches(raw: string, hash: string) { const a = Buffer.from(sha256(raw)); const b = Buffer.from(hash); return a.length === b.length && crypto.timingSafeEqual(a, b); }
+const requireDatabase = (_req: Request, res: Response, next: NextFunction) => supabase ? next() : fail(res, 503, 'Production database is not configured.');
+async function authUser(req: Request) { if (!supabase) return null; const header = req.headers.authorization; if (!header?.startsWith('Bearer ')) return null; const { data } = await supabase.auth.getUser(header.slice(7)); return data.user || null; }
+async function requireUser(req: Request, res: Response, next: NextFunction) { const user = await authUser(req); if (!user) return fail(res, 401, 'Authentication required.', requestId(req)); (req as Request & { authUser?: typeof user }).authUser = user; next(); }
+app.use('/api', rateLimit(300, 60_000));
 
-app.use(express.json());
+app.get('/api/health', (_req, res) => res.json({ success: true, service: 'ai-audio-robot', environment: production ? 'production' : 'development', database: Boolean(supabase), simulation: !production, serverTime: new Date().toISOString() }));
 
-// In-memory registry for verified Audio Controllers
-interface RegisteredController {
-  deviceId: string;
-  tokenHash: string;
-  roomId: string;
-  name: string;
-  ipAddress?: string;
-  firmwareVersion: string;
-  connectionStatus: 'connected' | 'disconnected';
-  lastSeen: string;
-  dspLoadPercent: number;
-  latencyMs: number;
-}
+app.get('/api/rooms', requireDatabase, requireUser, async (req, res) => { const { data, error } = await supabase!.from('rooms').select('id,organization_id,name,location,status,created_at,updated_at').limit(500); if (error) return fail(res, 500, 'Unable to load rooms.', requestId(req)); res.json({ success: true, rooms: data || [] }); });
+app.get('/api/zones', requireDatabase, requireUser, async (req, res) => { const { data, error } = await supabase!.from('zones').select('id,room_id,name,label,volume,is_muted,auto_mode,current_level_db,peak_level_db,controller_id,last_telemetry_at').limit(1000); if (error) return fail(res, 500, 'Unable to load zones.', requestId(req)); res.json({ success: true, zones: data || [] }); });
+app.get('/api/microphones', requireDatabase, requireUser, async (req, res) => { const { data, error } = await supabase!.from('microphones').select('id,room_id,zone_id,name,description,status,volume,is_muted,last_telemetry_at').limit(1000); if (error) return fail(res, 500, 'Unable to load microphones.', requestId(req)); res.json({ success: true, microphones: data || [] }); });
+app.get('/api/controllers', requireDatabase, requireUser, async (req, res) => { const { data, error } = await supabase!.from('controllers').select('id,device_id,room_id,name,status,firmware_version,last_seen,dsp_load,latency,created_at,updated_at').limit(500); if (error) return fail(res, 500, 'Unable to load controllers.', requestId(req)); const cutoff = Date.now() - Number(process.env.CONTROLLER_OFFLINE_AFTER_MS || 90_000); res.json({ success: true, controllers: (data || []).map((c) => ({ ...c, status: c.status === 'connected' && c.last_seen && Date.parse(c.last_seen) < cutoff ? 'disconnected' : c.status })) }); });
+app.get('/api/telemetry', requireDatabase, requireUser, async (req, res) => { const { data, error } = await supabase!.from('audio_readings').select('id,room_id,zone_id,microphone_id,rms_db,peak_db,clipping,recorded_at').order('recorded_at', { ascending: false }).limit(200); if (error) return fail(res, 500, 'Unable to load telemetry.', requestId(req)); res.json({ success: true, telemetry: data || [] }); });
+app.get('/api/alerts', requireDatabase, requireUser, async (req, res) => { const { data, error } = await supabase!.from('alerts').select('id,room_id,category,severity,title,message,resolved,created_at,resolved_at').order('created_at', { ascending: false }).limit(200); if (error) return fail(res, 500, 'Unable to load alerts.', requestId(req)); res.json({ success: true, alerts: data || [] }); });
+app.get('/api/audit', requireDatabase, requireUser, async (req, res) => { const { data, error } = await supabase!.from('audit_logs').select('id,actor_id,actor_email,actor_role,operation,target,old_value,new_value,source,created_at,request_id').order('created_at', { ascending: false }).limit(200); if (error) return fail(res, 500, 'Unable to load audit logs.', requestId(req)); res.json({ success: true, audit: data || [] }); });
 
-const registeredControllers = new Map<string, RegisteredController>();
+app.post('/api/controller/register', requireDatabase, rateLimit(120, 60_000), async (req, res) => { const id = requestId(req); const { deviceId, roomId, name, firmwareVersion } = req.body || {}; if (![deviceId, roomId, name, firmwareVersion].every((v) => typeof v === 'string' && v.trim())) return fail(res, 400, 'deviceId, roomId, name and firmwareVersion are required.', id); const token = safeToken(); const { data, error } = await supabase!.from('controllers').insert({ device_id: deviceId.trim(), room_id: roomId, name: name.trim(), firmware_version: firmwareVersion.trim(), token_hash: sha256(token), status: 'pending' }).select('id,device_id,room_id,name,status,firmware_version').single(); if (error) return fail(res, error.code === '23505' ? 409 : 400, 'Controller registration failed.', id); await supabase!.from('audit_logs').insert({ operation: 'controller.register', target: data.id, source: 'controller', new_value: { device_id: data.device_id }, request_id: id }); res.status(201).json({ success: true, controller: data, secretToken: token, warning: 'Store this token securely; it will not be shown again.' }); });
+app.post('/api/controller/heartbeat', requireDatabase, rateLimit(120, 60_000), async (req, res) => { const id = requestId(req); const { deviceId, secretToken, dspLoad, latency } = req.body || {}; if (typeof deviceId !== 'string' || typeof secretToken !== 'string' || secretToken.length < 20) return fail(res, 400, 'Valid deviceId and secretToken are required.', id); const { data: controller, error } = await supabase!.from('controllers').select('id,token_hash,status').eq('device_id', deviceId).limit(1).single(); if (error || !controller || controller.status === 'disabled' || !tokenMatches(secretToken, controller.token_hash)) return fail(res, 401, 'Unauthorized controller.', id); const patch: Record<string, unknown> = { status: 'connected', last_seen: new Date().toISOString(), updated_at: new Date().toISOString() }; if (typeof dspLoad === 'number' && dspLoad >= 0 && dspLoad <= 100) patch.dsp_load = dspLoad; if (typeof latency === 'number' && latency >= 0 && latency <= 10000) patch.latency = latency; const { error: updateError } = await supabase!.from('controllers').update(patch).eq('id', controller.id); if (updateError) return fail(res, 500, 'Heartbeat could not be recorded.', id); res.json({ success: true, acknowledged: true, serverTime: new Date().toISOString() }); });
 
-// Health API
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'online',
-    service: 'AI Audio Robot Core API',
-    domain: 'audio.myeloued.com',
-    timestamp: new Date().toISOString(),
-  });
-});
-
-/**
- * Controller Registration Endpoint
- * Used by embedded hardware (ESP32, Raspberry Pi, Dante/AES67 bridge, Q-SYS plugin)
- * Validates device token and registers connection state.
- */
-app.post('/api/controller/register', (req, res) => {
-  const { deviceId, secretToken, roomId, name, firmwareVersion } = req.body;
-
-  if (!deviceId || !secretToken || !roomId) {
-    return res.status(400).json({
-      error: 'Missing required parameters: deviceId, secretToken, and roomId are required.',
-    });
-  }
-
-  // Token minimum security check
-  if (secretToken.length < 8) {
-    return res.status(401).json({
-      error: 'Invalid secretToken format. Must be a secure high-entropy token of at least 8 characters.',
-    });
-  }
-
-  const controller: RegisteredController = {
-    deviceId,
-    tokenHash: Buffer.from(secretToken).toString('base64').substring(0, 16) + '***',
-    roomId,
-    name: name || `Audio Controller ${deviceId}`,
-    firmwareVersion: firmwareVersion || 'v1.0.0',
-    connectionStatus: 'connected',
-    lastSeen: new Date().toISOString(),
-    dspLoadPercent: Math.floor(Math.random() * 25) + 15,
-    latencyMs: +(Math.random() * 2 + 1.2).toFixed(2),
-    ipAddress: req.ip || '192.168.1.100',
-  };
-
-  registeredControllers.set(deviceId, controller);
-
-  res.status(200).json({
-    success: true,
-    message: 'Controller registered and authenticated successfully.',
-    controller: {
-      deviceId: controller.deviceId,
-      roomId: controller.roomId,
-      name: controller.name,
-      connectionStatus: controller.connectionStatus,
-      lastSeen: controller.lastSeen,
-      dspLoadPercent: controller.dspLoadPercent,
-      latencyMs: controller.latencyMs,
-    },
-  });
-});
-
-/**
- * Controller Heartbeat Endpoint
- * Physical hardware periodically calls this to verify live state.
- */
-app.post('/api/controller/heartbeat', (req, res) => {
-  const { deviceId, secretToken, dspLoadPercent, latencyMs } = req.body;
-
-  if (!deviceId || !registeredControllers.has(deviceId)) {
-    return res.status(404).json({
-      error: 'Unregistered controller. Please call /api/controller/register first.',
-    });
-  }
-
-  const ctrl = registeredControllers.get(deviceId)!;
-  ctrl.lastSeen = new Date().toISOString();
-  ctrl.connectionStatus = 'connected';
-  if (typeof dspLoadPercent === 'number') ctrl.dspLoadPercent = dspLoadPercent;
-  if (typeof latencyMs === 'number') ctrl.latencyMs = latencyMs;
-
-  res.json({
-    success: true,
-    acknowledged: true,
-    serverTime: new Date().toISOString(),
-  });
-});
-
-/**
- * List Registered Hardware Controllers
- */
-app.get('/api/controller/list', (req, res) => {
-  const list = Array.from(registeredControllers.values()).map((c) => ({
-    deviceId: c.deviceId,
-    roomId: c.roomId,
-    name: c.name,
-    firmwareVersion: c.firmwareVersion,
-    connectionStatus: c.connectionStatus,
-    lastSeen: c.lastSeen,
-    dspLoadPercent: c.dspLoadPercent,
-    latencyMs: c.latencyMs,
-    ipAddress: c.ipAddress,
-  }));
-
-  res.json({
-    count: list.length,
-    controllers: list,
-  });
-});
-
-/**
- * Gemini AI Acoustic Intelligence Diagnostics
- * Deep real-time room acoustic analysis, feedback spectrum detection,
- * and DSP auto-tuning suggestions.
- */
-app.post('/api/ai/diagnose', async (req, res) => {
-  const { roomName, masterVolume, zones, microphones, isSimulation } = req.body;
-
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    // Graceful fallback if no Gemini key injected
-    return res.json({
-      success: true,
-      mode: isSimulation ? 'simulation' : 'heuristic',
-      analysis: `تحليل صوتي لقاعة "${roomName || 'الرئيسية'}": مستوى الصوت العام عند ${masterVolume}%. جميع المناطق تعمل ضمن الحيز الصوتي الطبيعي. تم كبت رنين 3.15kHz تلقائياً.`,
-      recommendations: [
-        {
-          zone: 'Zone C',
-          action: 'خفض 4% لتفادي انعكاسات الصوت من الجدران الخلفية',
-        },
-      ],
-      aiConfidence: 94,
-    });
-  }
-
-  try {
-    const ai = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
-      },
-    });
-
-    const prompt = `أنت مهندس صوتيات محترف ونظام الذكاء الاصطناعي "AI Audio Robot".
-قم بتحليل المعطيات الصوتية التالية لقاعة مؤتمرات:
-- اسم القاعة: ${roomName || 'قاعة المؤتمرات'}
-- Master Volume: ${masterVolume}%
-- المناطق الصوتية (Zones): ${JSON.stringify(zones || [])}
-- الميكروفونات: ${JSON.stringify(microphones || [])}
-- وضع التشغيل: ${isSimulation ? 'محاكاة (Simulation)' : 'إنتاج حقيقي (Production)'}
-
-قدم تحليلاً دقيقاً وموجزاً باللغة العربية (3 إلى 4 أسطر فقط) يتضمن:
-1. تقييم التوازن الصوتي بين المنصة والجمهور.
-2. فحص احتمالية حدوث Feedback أو تشويه صوتي (Clipping).
-3. توصية محددة وقابلة للتطبيق لأي منطقة أو ميكروفون.
-4. إرشادات DSP لمعدل الكسب (Gain Staging).`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: prompt,
-    });
-
-    res.json({
-      success: true,
-      analysis: response.text,
-      aiModel: 'gemini-3.8-flash',
-      analyzedAt: new Date().toISOString(),
-    });
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Gemini acoustic diagnosis error:', err.message);
-    res.json({
-      success: true,
-      analysis: `التقييم الصوتي الداخلي: القاعة تعمل بتوازن مستقر بنسبة 92%. يُنصح بالحفاظ على توازن Gain بين Zone A و Zone C لتجنب أي تداخل ترددي.`,
-      fallback: true,
-      error: err.message,
-    });
-  }
-});
-
-async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`AI Audio Robot server listening on http://0.0.0.0:${PORT}`);
-  });
-}
-
-startServer();
+app.post('/api/ai/diagnose', requireDatabase, requireUser, async (req, res) => { const { telemetry } = req.body || {}; if (!Array.isArray(telemetry) || telemetry.length === 0) return fail(res, 422, 'No real audio telemetry is available for analysis.'); const apiKey = process.env.GEMINI_API_KEY; if (!apiKey) return fail(res, 503, 'Gemini is not configured; no AI analysis was fabricated.'); try { const ai = new GoogleGenAI({ apiKey }); const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'; const response = await ai.models.generateContent({ model, contents: `Analyze only this verified audio telemetry and return concise Arabic recommendations. Do not invent readings: ${JSON.stringify(telemetry.slice(0, 100))}` }); res.json({ success: true, model, analysis: response.text, analyzedAt: new Date().toISOString() }); } catch (error) { console.error('AI analysis failed:', error instanceof Error ? error.message : 'unknown'); return fail(res, 502, 'AI analysis is temporarily unavailable.', requestId(req)); } });
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => { console.error('Unhandled request error:', err instanceof Error ? err.message : 'unknown'); res.status(500).json({ success: false, error: 'Internal server error.' }); });
+async function startServer() { if (!production) { const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' }); app.use(vite.middlewares); } else { const distPath = path.join(process.cwd(), 'dist'); app.use(express.static(distPath)); app.get('*', (_req, res) => res.sendFile(path.join(distPath, 'index.html'))); } app.listen(PORT, '0.0.0.0', () => console.log(`AI Audio Robot listening on ${PORT}`)); }
+startServer().catch((error) => { console.error('Server startup failed:', error); process.exit(1); });
+export { app, sha256 };
