@@ -1,19 +1,26 @@
 # سوق الوادي — Souq El Oued
 
-منصة تجارة وإعلانات محلية موجهة لولاية الوادي، مبنية بـ React + TypeScript + Vite + Tailwind CSS.
+منصة تجارة وإعلانات محلية موجهة لولاية الوادي، مبنية بـ React + TypeScript + Vite + Tailwind CSS + React Router.
 
 ## الوضع الحالي
 
-هذه النسخة هي **واجهة MVP احترافية قابلة للتطوير** وتشمل:
-- بحث وفلاتر حسب البلدية والتصنيف.
-- تصنيفات محلية للمنتجات والخدمات.
-- بطاقات إعلانات حديثة ومتجاوبة.
-- مفضلة محفوظة في LocalStorage.
-- تفاصيل الإعلان والتواصل عبر الهاتف وWhatsApp.
-- نموذج أولي لتسجيل الدخول ونشر الإعلان.
-- دعم البلديات الحالية المستخدمة في نطاق ولاية الوادي.
+هذه النسخة **واجهة احترافية جاهزة للعرض قبل ربط قاعدة البيانات**، وتشمل:
 
-البيانات الحالية تجريبية؛ المرحلة الإنتاجية يجب أن تربط Supabase/Auth/Storage وقاعدة البيانات.
+- صفحات حقيقية بروابط خاصة (`/`, `/listing/:id`, `/about`, `/contact`, `/terms`, `/privacy`) عبر React Router — مهم للمشاركة ومحركات البحث.
+- بحث + اقتراحات سريعة + فلاتر (بلدية، تصنيف، سعر، حالة) في شريط علوي وقائمة جانبية على غرار منصات الإعلانات المعروفة.
+- ترقيم صفحات (Pagination) للإعلانات.
+- صفحة تفاصيل إعلان كاملة مع "إعلانات مشابهة" و breadcrumb.
+- صفحة 404 مخصصة.
+- صفحات قانونية أساسية (من نحن، اتصل بنا، الشروط، الخصوصية) — ضرورية قبل أي إطلاق عام.
+- مفضلة محفوظة في LocalStorage، تواصل مباشر عبر واتساب/هاتف.
+- بنية ملفات مقسّمة (`components/layout`, `components/home`, `components/listings`, `pages`, `context`) بدل ملف واحد ضخم.
+
+البيانات الحالية تجريبية (`src/data/listings.ts`)؛ المرحلة الإنتاجية يجب أن تربط Supabase/Auth/Storage وقاعدة البيانات (انظر `supabase/schema.sql`).
+
+## ⚠️ قبل الإطلاق العام
+
+- **صورة الخلفية** (`public/hero-eloued.webp`) صورة فوتوغرافية حقيقية لمدينة الوادي. تأكد من امتلاك حقوق استخدامها تجارياً (صورتك الخاصة، ترخيص Creative Commons/Unsplash، أو صورة مولّدة بالذكاء الاصطناعي) قبل النشر العام.
+- شغّل `npm install` لإعادة توليد `package-lock.json` بعد إضافة `react-router-dom`.
 
 ## التشغيل
 
@@ -32,11 +39,11 @@ npm run build
 ## خارطة الطريق الإنتاجية
 
 1. Supabase Auth + Profiles + Roles.
-2. PostgreSQL: listings/categories/municipalities/favorites/reports/messages.
+2. PostgreSQL: listings/categories/municipalities/favorites/reports/messages (انظر `supabase/schema.sql`).
 3. Supabase Storage للصور مع ضغط WebP وthumbnails.
 4. RLS صارم حسب المستخدم والدور.
 5. لوحة Admin للمراجعة والبلاغات.
-6. SEO وOpen Graph وSitemap.
+6. SEO متقدم: Sitemap ديناميكي، JSON-LD لكل إعلان، صور Open Graph.
 7. PWA وتجربة هاتف ممتازة.
 8. مراقبة الأخطاء والأداء والنسخ الاحتياطي.
 9. نظام إعلانات مميزة ومتاجر موثقة.
