@@ -1,13 +1,4 @@
 @import "tailwindcss";
-
-@theme { --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif; }
-:root { font-family: 'Cairo', ui-sans-serif, system-ui, sans-serif; color: #17212b; background: #f6f7f9; font-synthesis: none; }
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; min-width: 320px; background: #f6f7f9; }
-button, a, select, input { -webkit-tap-highlight-color: transparent; }
-button { cursor: pointer; }
-.scrollbar-none { scrollbar-width: none; }
-.scrollbar-none::-webkit-scrollbar { display: none; }
-::selection { background: #ffd7c9; color: #17212b; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+@theme { --font-sans:'Cairo',ui-sans-serif,system-ui,sans-serif; }
+:root{font-family:'Cairo',ui-sans-serif,system-ui,sans-serif;color:#17212b;background:#f7f8fa;font-synthesis:none;}
+*{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;min-width:320px;background:#f7f8fa} button,a,select,input,textarea{-webkit-tap-highlight-color:transparent}button{cursor:pointer}.scrollbar-none{scrollbar-width:none}.scrollbar-none::-webkit-scrollbar{display:none}::selection{background:#ffd7c9;color:#17212b}input,select,textarea{font-family:inherit}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important}}
