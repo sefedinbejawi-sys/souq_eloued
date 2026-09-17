@@ -4,6 +4,8 @@ import { categories, municipalities } from '../../data';
 import { useApp } from '../../context/AppContext';
 import { supabase } from '../../lib/supabase';
 
+const authRedirectUrl = import.meta.env.VITE_SITE_URL || 'https://souq.myeloued.com/';
+
 export function Modals() {
   const { modal, setModal, notify, session } = useApp();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -31,7 +33,7 @@ export function Modals() {
     if (!supabase) { setAuthMessage('إعدادات Supabase غير متوفرة في النسخة المنشورة.'); return; }
     if (!email || !password) { setAuthMessage('أدخل البريد الإلكتروني وكلمة المرور.'); return; }
     setSaving(true);
-    const result = mode === 'login' ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin } });
+    const result = mode === 'login' ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: authRedirectUrl } });
     setSaving(false);
     if (result.error) { const message = result.error.message.includes('Invalid login') ? 'البريد أو كلمة المرور غير صحيحة.' : result.error.message; setAuthMessage(message); notify(message); return; }
     setEmail(''); setPassword('');
