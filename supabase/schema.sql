@@ -182,3 +182,12 @@ begin
   return new;
 end;
 $$;
+
+
+-- صلاحيات المشرف: قراءة وتعديل فقط، والحذف النهائي للمدير admin وحده
+create or replace function public.is_moderator() returns boolean language sql stable security definer set search_path = public as $$ select exists (select 1 from public.profiles where id = auth.uid() and role in ('admin','operator') and is_banned = false); $$;
+drop policy if exists "Moderators manage listings" on public.listings;
+drop policy if exists "Admins manage listings" on public.listings;
+create policy "Admins manage listings" on public.listings for all to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy "Operators review listings" on public.listings for select to authenticated using (public.is_moderator());
+create policy "Operators update listings" on public.listings for update to authenticated using (public.is_moderator()) with check (public.is_moderator());
