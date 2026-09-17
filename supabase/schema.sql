@@ -148,3 +148,21 @@ drop policy if exists "Admins manage profiles" on public.profiles;
 create policy "Admins manage profiles" on public.profiles for all to authenticated using (public.is_admin()) with check (public.is_admin());
 drop policy if exists "Admins manage listings" on public.listings;
 create policy "Admins manage listings" on public.listings for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+
+-- توافق مشروع Supabase الحالي الذي يحتوي organizations وprofiles متعددة المؤسسات
+alter table public.profiles add column if not exists is_verified boolean not null default false;
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare new_org_id uuid; display_name text;
+begin
+  display_name := coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), split_part(coalesce(new.email, 'user'), '@', 1), 'مستخدم سوق الوادي');
+  insert into public.organizations (name) values (display_name || ' · سوق الوادي') returning id into new_org_id;
+  insert into public.profiles (id, organization_id, email, full_name, role, is_banned, is_verified)
+  values (new.id, new_org_id, coalesce(new.email, ''), display_name, 'viewer', false, false)
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
