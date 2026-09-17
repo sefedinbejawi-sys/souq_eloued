@@ -7,5 +7,7 @@ html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; background: #f6f7f9; }
 button, a, select, input { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
 ::selection { background: #ffd7c9; color: #17212b; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
