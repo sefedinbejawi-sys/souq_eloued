@@ -191,3 +191,20 @@ drop policy if exists "Admins manage listings" on public.listings;
 create policy "Admins manage listings" on public.listings for all to authenticated using (public.is_admin()) with check (public.is_admin());
 create policy "Operators review listings" on public.listings for select to authenticated using (public.is_moderator());
 create policy "Operators update listings" on public.listings for update to authenticated using (public.is_moderator()) with check (public.is_moderator());
+
+
+-- مصادقة الهاتف فقط: البريد اختياري وغير مستخدم في التسجيل
+alter table public.profiles alter column email drop not null;
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare new_org_id uuid; display_name text; contact_phone text;
+begin
+  contact_phone := coalesce(nullif(new.phone, ''), nullif(new.raw_user_meta_data ->> 'phone', ''));
+  display_name := coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), contact_phone, 'مستخدم سوق الوادي');
+  insert into public.organizations (name) values (display_name || ' · سوق الوادي') returning id into new_org_id;
+  insert into public.profiles (id, organization_id, email, full_name, phone, role, is_banned, is_verified)
+  values (new.id, new_org_id, nullif(new.email, ''), display_name, contact_phone, 'viewer', false, false)
+  on conflict (id) do update set full_name = excluded.full_name, phone = coalesce(excluded.phone, public.profiles.phone), email = excluded.email, updated_at = now();
+  return new;
+end;
+$$;
