@@ -137,3 +137,14 @@ drop policy if exists "Users delete their listing images" on storage.objects;
 create policy "Users delete their listing images" on storage.objects
 for delete to authenticated
 using (bucket_id = 'listing-images' and (storage.foldername(name))[1] = (select auth.uid()::text));
+
+
+-- إدارة المحتوى والحظر
+alter table public.profiles add column if not exists is_banned boolean not null default false;
+create or replace function public.is_admin() returns boolean language sql stable security definer set search_path = public as $$ select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin' and is_banned = false); $$;
+create or replace function public.is_banned() returns boolean language sql stable security definer set search_path = public as $$ select exists (select 1 from public.profiles where id = auth.uid() and is_banned = true); $$;
+
+drop policy if exists "Admins manage profiles" on public.profiles;
+create policy "Admins manage profiles" on public.profiles for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "Admins manage listings" on public.listings;
+create policy "Admins manage listings" on public.listings for all to authenticated using (public.is_admin()) with check (public.is_admin());

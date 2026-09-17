@@ -9,6 +9,7 @@ import { HomePage } from './pages/HomePage';
 import { ListingDetailPage } from './pages/ListingDetailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './pages/LegalPages';
+import { AdminPage } from './pages/AdminPage';
 
 export default function App() {
   return <AppProvider>
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/contact" element={<ContactPage/>} />
         <Route path="/terms" element={<TermsPage/>} />
         <Route path="/privacy" element={<PrivacyPage/>} />
+        <Route path="/admin" element={<AdminPage/>} />
         <Route path="*" element={<NotFoundPage/>} />
       </Routes>
       <Footer/>

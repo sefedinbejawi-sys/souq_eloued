@@ -60,11 +60,11 @@ export function Modals() {
       imageUrls.push(supabase.storage.from('listing-images').getPublicUrl(path).data.publicUrl);
     }
 
-    const { error } = await supabase.from('listings').insert({ seller_id: session.user.id, category_id: categoryRow.id, municipality_id: municipalityRow.id, title, price: Number(price), description, phone, whatsapp: phone, status: 'active', image_urls: imageUrls });
+    const { error } = await supabase.from('listings').insert({ seller_id: session.user.id, category_id: categoryRow.id, municipality_id: municipalityRow.id, title, price: Number(price), description, phone, whatsapp: phone, status: 'draft', image_urls: imageUrls });
     setSaving(false);
     if (error) return notify(error.message);
     setModal(null); setTitle(''); setPrice(''); setDescription(''); setPhone(''); setCategory(''); setMunicipality(''); resetPhotos();
-    window.dispatchEvent(new Event('souq:listing-created')); notify('تم نشر إعلانك مع الصور بنجاح.');
+    window.dispatchEvent(new Event('souq:listing-created')); notify('تم إرسال إعلانك للمراجعة مع الصور. سيظهر بعد موافقة الإدارة.');
   };
 
   return <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/55 p-3 backdrop-blur-sm" onMouseDown={() => setModal(null)}><div onMouseDown={e => e.stopPropagation()} className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-7"><div className="flex items-center justify-between"><h3 className="text-lg font-black">{titles[modal]}</h3><button onClick={() => setModal(null)} className="rounded-xl bg-slate-100 p-2 text-slate-500"><X size={18}/></button></div>
