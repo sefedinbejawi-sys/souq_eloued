@@ -19,7 +19,7 @@ import { trackVisit } from './lib/visits';
 
 function VisitTracker() {
   const location = useLocation();
-  useEffect(() => { void trackVisit(location.pathname); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const timer = window.setTimeout(() => { void trackVisit(location.pathname); }, 1500); return () => window.clearTimeout(timer); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 
