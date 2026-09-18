@@ -12,6 +12,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './pages/LegalPages';
 import { AdminPage } from './pages/AdminPage';
 import { AuthConfirmedPage } from './pages/AuthConfirmedPage';
+import { AccountPage } from './pages/AccountPage';
 
 export default function App() {
   useEffect(() => {
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPage/>} />
         <Route path="/admin" element={<AdminPage/>} />
         <Route path="/auth/confirmed" element={<AuthConfirmedPage/>} />
+        <Route path="/account" element={<AccountPage/>} />
         <Route path="*" element={<NotFoundPage/>} />
       </Routes>
       <Footer/>
