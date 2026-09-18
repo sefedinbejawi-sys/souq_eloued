@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { initialListings, type Listing } from '../data/listings';
+import type { Listing } from '../data/listings';
 import { Hero } from '../components/home/Hero';
 import { CategoryGrid } from '../components/home/CategoryGrid';
 import { MunicipalitiesSection } from '../components/home/MunicipalitiesSection';
@@ -38,7 +38,7 @@ export function HomePage() {
   const [search, setSearch] = useState('');
   const [municipality, setMunicipality] = useState('');
   const [category, setCategory] = useState('');
-  const [listings, setListings] = useState<Listing[]>(initialListings);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [municipalities, setMunicipalities] = useState(fallbackMunicipalities);
   const [loading, setLoading] = useState(Boolean(supabase));
   const { notify, setModal } = useApp();
@@ -47,11 +47,15 @@ export function HomePage() {
     if (!supabase) return;
     setLoading(true);
     const [listingResult, municipalityResult] = await Promise.all([
-      supabase.from('listings').select('id,title,price,image_urls,whatsapp,phone,status,is_featured,views_count,published_at,description,municipalities(name),categories(name),profiles(full_name,is_verified)').eq('status', 'active').order('published_at', { ascending: false }).limit(60),
+      supabase.from('listings').select('id,title,price,image_urls,whatsapp,phone,status,is_featured,views_count,published_at,description,municipalities(name),categories(name),profiles(full_name,is_verified)').eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).order('published_at', { ascending: false }).limit(60),
       supabase.from('municipalities').select('name').eq('is_active', true).order('name').limit(50),
     ]);
-    if (listingResult.error) notify('تعذر تحميل الإعلانات من قاعدة البيانات، نعرض نماذج مؤقتة.');
-    else if (listingResult.data?.length) setListings(listingResult.data.map(mapRemoteListing));
+    if (listingResult.error) {
+      setListings([]);
+      notify('تعذر تحميل الإعلانات من قاعدة البيانات.');
+    } else {
+      setListings((listingResult.data || []).map(mapRemoteListing));
+    }
     if (!municipalityResult.error && municipalityResult.data?.length) setMunicipalities(municipalityResult.data.map(item => item.name));
     setLoading(false);
   };
@@ -70,6 +74,7 @@ export function HomePage() {
     <Hero search={search} municipality={municipality} category={category} onSearchChange={setSearch} onMunicipalityChange={setMunicipality} onCategoryChange={setCategory} onSubmit={() => scroll('listings')} />
     <section className="relative z-10 -mt-5 mx-1 sm:-mt-6 sm:mx-2"><SearchFilters search={search} municipality={municipality} category={category} municipalities={municipalities} categories={categories.map(x => x.name)} onSearchChange={setSearch} onMunicipalityChange={setMunicipality} onCategoryChange={setCategory} /></section>
     <CategoryGrid active={category} onSelect={c => { setCategory(c); scroll('listings'); }} onShowAll={() => setModal('allCategories')} />
+    {!loading && !listings.length && <div className="mb-5 rounded-2xl border border-dashed border-slate-200 bg-white p-7 text-center"><b className="block text-sm text-[#18394c]">لا توجد إعلانات منشورة حالياً</b><span className="mt-1 block text-xs font-semibold text-slate-400">الإعلانات تظهر هنا بعد مراجعتها والموافقة عليها من الإدارة.</span></div>}
     {loading && <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 text-center text-xs font-bold text-slate-500">جاري تحميل أحدث الإعلانات من سوق الوادي...</div>}
     <ListingsSection listings={listings} search={search} municipality={municipality} category={category} onNotify={notify} onReset={reset} />
     <MunicipalitiesSection onSelect={m => { setMunicipality(m); scroll('listings'); }} />

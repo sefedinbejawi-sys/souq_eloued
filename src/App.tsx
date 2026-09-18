@@ -11,6 +11,7 @@ import { ListingDetailPage } from './pages/ListingDetailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './pages/LegalPages';
 import { AdminPage } from './pages/AdminPage';
+import { MyListingsPage } from './pages/MyListingsPage';
 import { AuthConfirmedPage } from './pages/AuthConfirmedPage';
 import { trackVisit } from './lib/visits';
 
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/terms" element={<TermsPage/>} />
         <Route path="/privacy" element={<PrivacyPage/>} />
         <Route path="/admin" element={<AdminPage/>} />
+        <Route path="/my-listings" element={<MyListingsPage/>} />
         <Route path="/auth/confirmed" element={<AuthConfirmedPage/>} />
         <Route path="*" element={<NotFoundPage/>} />
       </Routes>

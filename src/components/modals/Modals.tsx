@@ -104,7 +104,9 @@ export function Modals() {
   const submitListing = async () => {
     if (!supabase) return notify('إعدادات Supabase غير متوفرة.');
     if (!session) { setModal('login'); return notify('سجل الدخول أولاً حتى تتمكن من نشر إعلان.'); }
-    if (!title || !price || !category || !municipality || !phone) return notify('أكمل العنوان والسعر والتصنيف والبلدية والهاتف.');
+    if (title.trim().length < 3 || title.trim().length > 120 || !price || !category || !municipality || !phone.trim()) return notify('أكمل العنوان (3–120 حرفاً) والسعر والتصنيف والبلدية والهاتف.');
+    if (photos.length === 0) return notify('أضف صورة واحدة على الأقل للإعلان حتى تتم مراجعته.');
+    if (!Number.isFinite(Number(price)) || Number(price) < 0) return notify('السعر غير صحيح.');
     setSaving(true);
     const databaseCategory = category === 'المركبات' ? 'المركبات والآليات' : category;
     const [{ data: categoryRow }, { data: municipalityRow }] = await Promise.all([
@@ -114,17 +116,19 @@ export function Modals() {
     if (!categoryRow?.id || !municipalityRow?.id) { setSaving(false); return notify('التصنيف أو البلدية غير متوفرين في قاعدة البيانات.'); }
 
     const imageUrls: string[] = [];
+    const uploadedPaths: string[] = [];
     for (const file of photos) {
       const safeName = file.name.toLowerCase().replace(/[^a-z0-9._-]/g, '-');
       const path = `${session.user.id}/${crypto.randomUUID()}-${safeName}`;
       const upload = await supabase.storage.from('listing-images').upload(path, file, { upsert: false, contentType: file.type, cacheControl: '31536000' });
-      if (upload.error) { setSaving(false); return notify(`تعذر رفع الصورة: ${upload.error.message}`); }
+      if (upload.error) { if (uploadedPaths.length) await supabase.storage.from('listing-images').remove(uploadedPaths); setSaving(false); return notify(`تعذر رفع الصورة: ${upload.error.message}`); }
+      uploadedPaths.push(path);
       imageUrls.push(supabase.storage.from('listing-images').getPublicUrl(path).data.publicUrl);
     }
 
     const { error } = await supabase.from('listings').insert({ seller_id: session.user.id, category_id: categoryRow.id, municipality_id: municipalityRow.id, title, price: Number(price), description, phone, whatsapp: phone, status: 'draft', image_urls: imageUrls });
     setSaving(false);
-    if (error) return notify(error.message);
+    if (error) { if (uploadedPaths.length) await supabase.storage.from('listing-images').remove(uploadedPaths); return notify(error.message); }
     setModal(null); setTitle(''); setPrice(''); setDescription(''); setPhone(''); setCategory(''); setMunicipality(''); resetPhotos();
     window.dispatchEvent(new Event('souq:listing-created')); notify('تم إرسال إعلانك للمراجعة مع الصور. سيظهر بعد موافقة الإدارة.');
   };
@@ -203,7 +207,7 @@ export function Modals() {
         )}
       </div>
     </div>}
-    {modal === 'sell' && <div className="mt-5 grid gap-3"><div className="rounded-2xl border border-dashed border-[#f0ad96] bg-[#fff8f5] p-3"><label className="flex cursor-pointer items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-white text-[#e7663c] shadow-sm"><ImagePlus size={21}/></span><span><b className="block text-sm">أضف صور المنتج</b><small className="text-[11px] text-slate-500">حتى 6 صور · 5 ميغابايت للصورة</small></span><input type="file" accept="image/*" multiple className="hidden" onChange={e => selectPhotos(e.target.files)}/></label>{previews.length > 0 && <div className="mt-3 grid grid-cols-3 gap-2">{previews.map((src, index) => <div key={src} className="relative aspect-square overflow-hidden rounded-xl"><img src={src} alt={`معاينة ${index + 1}`} className="h-full w-full object-cover"/><button type="button" aria-label="حذف الصور" onClick={resetPhotos} className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-slate-900/70 text-white"><X size={13}/></button></div>)}</div>}</div><input value={title} onChange={e => setTitle(e.target.value)} className="h-12 rounded-xl border border-slate-200 px-4 text-sm" placeholder="عنوان الإعلان"/><div className="grid grid-cols-2 gap-3"><input value={price} onChange={e => setPrice(e.target.value)} type="number" className="h-12 rounded-xl border border-slate-200 px-4 text-sm" placeholder="السعر بالدج"/><select value={category} onChange={e => setCategory(e.target.value)} className="h-12 rounded-xl border border-slate-200 px-3 text-sm"><option value="">اختر التصنيف</option>{categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}</select></div><select value={municipality} onChange={e => setMunicipality(e.target.value)} className="h-12 rounded-xl border border-slate-200 px-3 text-sm"><option value="">اختر البلدية</option>{municipalities.map(x => <option key={x} value={x}>{x}</option>)}</select><input value={phone} onChange={e => setPhone(e.target.value)} className="h-12 rounded-xl border border-slate-200 px-4 text-sm" placeholder="رقم الهاتف / واتساب"/><textarea value={description} onChange={e => setDescription(e.target.value)} className="min-h-28 rounded-xl border border-slate-200 p-4 text-sm" placeholder="اكتب وصفاً واضحاً للإعلان..."/><button disabled={saving} onClick={submitListing} className="h-12 rounded-xl bg-[#e7663c] text-sm font-black text-white disabled:opacity-60">{saving ? 'جارٍ رفع الصور ونشر الإعلان...' : 'نشر الإعلان الآن'}</button></div>}
+    {modal === 'sell' && <div className="mt-5 grid gap-3"><div className="rounded-2xl border border-dashed border-[#f0ad96] bg-[#fff8f5] p-3"><label className="flex cursor-pointer items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-white text-[#e7663c] shadow-sm"><ImagePlus size={21}/></span><span><b className="block text-sm">أضف صور المنتج</b><small className="text-[11px] text-slate-500">حتى 6 صور · 5 ميغابايت للصورة</small></span><input type="file" accept="image/*" multiple className="hidden" onChange={e => selectPhotos(e.target.files)}/></label>{previews.length > 0 && <div className="mt-3 grid grid-cols-3 gap-2">{previews.map((src, index) => <div key={src} className="relative aspect-square overflow-hidden rounded-xl"><img src={src} alt={`معاينة ${index + 1}`} className="h-full w-full object-cover"/><button type="button" aria-label="حذف الصور" onClick={resetPhotos} className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-slate-900/70 text-white"><X size={13}/></button></div>)}</div>}</div><input value={title} onChange={e => setTitle(e.target.value)} className="h-12 rounded-xl border border-slate-200 px-4 text-sm" placeholder="عنوان الإعلان"/><div className="grid grid-cols-2 gap-3"><input value={price} onChange={e => setPrice(e.target.value)} type="number" className="h-12 rounded-xl border border-slate-200 px-4 text-sm" placeholder="السعر بالدج"/><select value={category} onChange={e => setCategory(e.target.value)} className="h-12 rounded-xl border border-slate-200 px-3 text-sm"><option value="">اختر التصنيف</option>{categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}</select></div><select value={municipality} onChange={e => setMunicipality(e.target.value)} className="h-12 rounded-xl border border-slate-200 px-3 text-sm"><option value="">اختر البلدية</option>{municipalities.map(x => <option key={x} value={x}>{x}</option>)}</select><input value={phone} onChange={e => setPhone(e.target.value)} className="h-12 rounded-xl border border-slate-200 px-4 text-sm" placeholder="رقم الهاتف / واتساب"/><textarea value={description} onChange={e => setDescription(e.target.value)} className="min-h-28 rounded-xl border border-slate-200 p-4 text-sm" placeholder="اكتب وصفاً واضحاً للإعلان..."/><button disabled={saving} onClick={submitListing} className="h-12 rounded-xl bg-[#e7663c] text-sm font-black text-white disabled:opacity-60">{saving ? 'جارٍ رفع الصور وإرسال الإعلان للمراجعة...' : 'إرسال الإعلان للمراجعة'}</button></div>}
     {modal === 'allCategories' && <div className="mt-5 grid grid-cols-2 gap-2">{categories.map(c => <button key={c.name} onClick={() => setModal(null)} className="rounded-2xl border border-slate-200 p-4 text-right hover:border-[#e7663c]"><span className="text-xl">{c.icon}</span><b className="mt-2 block text-xs">{c.name}</b><small className="text-[10px] text-slate-400">{c.description}</small></button>)}</div>}
   </div></div>;
 }

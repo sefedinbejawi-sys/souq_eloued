@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 
 export function BottomNav() {
-  const { favorites, notify, setModal } = useApp();
+  const { favorites, notify, setModal, session } = useApp();
   const navigate = useNavigate();
   const scroll = (id: string) => {
     if (location.pathname !== '/') { navigate('/'); setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 50); return; }
@@ -13,6 +13,6 @@ export function BottomNav() {
     <button onClick={() => scroll('home')} className="flex flex-col items-center justify-center gap-0.5 text-[#e7663c]"><Home size={19}/><span className="text-[10px] font-bold">الرئيسية</span></button>
     <button onClick={() => scroll('categories')} className="flex flex-col items-center justify-center gap-0.5 text-slate-500"><Grid2X2 size={19}/><span className="text-[10px] font-bold">التصنيفات</span></button>
     <button onClick={() => notify(favorites.length ? `${favorites.length} إعلان محفوظ` : 'لا توجد محفوظات')} className="flex flex-col items-center justify-center gap-0.5 text-slate-500"><Heart size={19}/><span className="text-[10px] font-bold">المفضلة</span></button>
-    <button onClick={() => setModal('login')} className="flex flex-col items-center justify-center gap-0.5 text-slate-500"><UserRound size={19}/><span className="text-[10px] font-bold">حسابي</span></button>
+    <button onClick={() => session ? navigate('/my-listings') : setModal('login')} className="flex flex-col items-center justify-center gap-0.5 text-slate-500"><UserRound size={19}/><span className="text-[10px] font-bold">حسابي</span></button>
   </nav>;
 }
