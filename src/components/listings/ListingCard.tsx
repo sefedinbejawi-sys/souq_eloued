@@ -4,13 +4,15 @@ import type { ComponentProps } from 'react';
 import type { Listing } from '../../data/listings';
 import { formatPrice } from '../../lib/format';
 import { useApp } from '../../context/AppContext';
+import { toWhatsAppNumber } from '../../lib/phone';
 
 type Props = ComponentProps<'article'> & { listing: Listing; onContact?: (listing: Listing, method: 'whatsapp' | 'phone') => void };
 
 export function ListingCard({ listing, onContact }: Props) {
   const { favorites, toggleFavorite } = useApp();
   const favorite = favorites.includes(listing.id);
-  const whatsappUrl = `https://wa.me/${listing.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`السلام عليكم، أستفسر عن: ${listing.title}`)}`;
+  const whatsappNumber = toWhatsAppNumber(listing.whatsapp || listing.phone);
+  const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`السلام عليكم، أستفسر عن: ${listing.title}`)}` : '';
 
   return <article className="group overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_5px_22px_rgba(15,32,45,.045)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,32,45,.10)]">
     <Link to={`/listing/${listing.id}`} className="block w-full text-right">
@@ -32,7 +34,7 @@ export function ListingCard({ listing, onContact }: Props) {
       </div>
     </Link>
     <div className="grid grid-cols-[1fr_auto] gap-2 px-4 pb-4">
-      <a href={whatsappUrl} target="_blank" rel="noreferrer" onClick={() => onContact?.(listing, 'whatsapp')} className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#287f72] text-xs font-extrabold text-white hover:bg-[#216a60]"><MessageCircle size={15}/> واتساب</a>
+      {whatsappUrl ? <a href={whatsappUrl} target="_blank" rel="noreferrer" onClick={() => onContact?.(listing, 'whatsapp')} className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#287f72] text-xs font-extrabold text-white hover:bg-[#216a60]"><MessageCircle size={15}/> واتساب</a> : <span className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-slate-100 text-xs font-extrabold text-slate-400"><MessageCircle size={15}/> واتساب</span>}
       <a href={`tel:${listing.phone}`} onClick={() => onContact?.(listing, 'phone')} className="grid h-10 w-11 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-[#287f72]"><Phone size={15}/></a>
     </div>
   </article>;

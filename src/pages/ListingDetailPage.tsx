@@ -7,6 +7,7 @@ import { useApp } from '../context/AppContext';
 import { ListingCard } from '../components/listings/ListingCard';
 import { NotFoundPage } from './NotFoundPage';
 import { supabase } from '../lib/supabase';
+import { toWhatsAppNumber } from '../lib/phone';
 
 function mapRow(row: any): Listing {
   const seller = row.profiles?.full_name || 'بائع سوق الوادي';
@@ -40,7 +41,8 @@ export function ListingDetailPage() {
   if (loading) return <main className="mx-auto max-w-xl px-4 py-20 text-center text-sm font-bold text-slate-500">جاري تحميل الإعلان...</main>;
   if (!listing) return <NotFoundPage />;
   const favorite = favorites.includes(listing.id);
-  const whatsappUrl = listing.whatsapp ? `https://wa.me/${listing.whatsapp.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(`السلام عليكم، أستفسر عن: ${listing.title}`)}` : '';
+  const whatsappNumber = toWhatsAppNumber(listing.whatsapp || listing.phone);
+  const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`السلام عليكم، أستفسر عن: ${listing.title}`)}` : '';
 
   return <main className="mx-auto max-w-[1360px] px-3 py-6 sm:px-6">
     <div className="mb-4 flex items-center gap-1.5 text-[11px] font-bold text-slate-400"><Link to="/" className="hover:text-[#e7663c]">الرئيسية</Link><ChevronLeft size={12}/><span>{listing.category}</span><ChevronLeft size={12}/><span className="truncate text-slate-600">{listing.title}</span></div>
