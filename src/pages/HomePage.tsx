@@ -14,11 +14,12 @@ function mapRemoteListing(row: any): Listing {
   const municipality = row.municipalities?.name || 'الوادي';
   const category = row.categories?.name || 'أخرى';
   const seller = row.profiles?.full_name || 'بائع سوق الوادي';
+  const images = Array.isArray(row.image_urls) ? row.image_urls.filter(Boolean) : [];
   return {
     id: row.id,
     title: row.title,
     price: Number(row.price || 0),
-    image: row.image_urls?.[0] || '/hero-eloued.webp',
+    image: images[0] || '/hero-eloued.webp', images,
     municipality,
     category,
     seller,
