@@ -2,8 +2,7 @@ import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 
 export function Footer() {
-  const { setModal, session, notify } = useApp();
-  const openSell = () => { if (session) setModal('sell'); else { setModal('login'); notify('سجّل الدخول أولاً حتى تتمكن من إضافة إعلان.'); } };
+  const { setModal } = useApp();
   return <footer className="border-t border-slate-200 bg-white">
     <div className="mx-auto grid max-w-[1360px] gap-6 px-5 py-8 sm:grid-cols-4 sm:px-6">
       <div>
@@ -13,7 +12,7 @@ export function Footer() {
       <div>
         <b className="text-sm">للمستخدمين</b>
         <div className="mt-3 grid gap-2 text-xs text-slate-500">
-          <button className="text-right hover:text-[#e7663c]" onClick={openSell}>نشر إعلان</button>
+          <button className="text-right hover:text-[#e7663c]" onClick={() => setModal('sell')}>نشر إعلان</button>
           <button className="text-right hover:text-[#e7663c]" onClick={() => setModal('login')}>تسجيل الدخول</button>
           <button className="text-right hover:text-[#e7663c]" onClick={() => setModal('allCategories')}>كل التصنيفات</button>
         </div>

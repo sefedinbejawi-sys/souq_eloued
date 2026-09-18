@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
@@ -12,15 +12,18 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './pages/LegalPages';
 import { AdminPage } from './pages/AdminPage';
 import { AuthConfirmedPage } from './pages/AuthConfirmedPage';
-import { AccountPage } from './pages/AccountPage';
+import { trackVisit } from './lib/visits';
+
+function VisitTracker() {
+  const location = useLocation();
+  useEffect(() => { void trackVisit(location.pathname); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
 
 export default function App() {
-  useEffect(() => {
-    const isLocalAuthLink = ['localhost', '127.0.0.1'].includes(window.location.hostname) && (window.location.hash.includes('access_token=') || window.location.search.includes('code='));
-    if (isLocalAuthLink) window.location.replace(`https://souq.myeloued.com/auth/confirmed${window.location.search}${window.location.hash}`);
-  }, []);
   return <AppProvider>
     <div dir="rtl" className="min-h-screen bg-[#f7f8fa] pb-16 text-slate-900 md:pb-0">
+      <VisitTracker/>
       <Header/>
       <Routes>
         <Route path="/" element={<HomePage/>} />
@@ -31,7 +34,6 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPage/>} />
         <Route path="/admin" element={<AdminPage/>} />
         <Route path="/auth/confirmed" element={<AuthConfirmedPage/>} />
-        <Route path="/account" element={<AccountPage/>} />
         <Route path="*" element={<NotFoundPage/>} />
       </Routes>
       <Footer/>
