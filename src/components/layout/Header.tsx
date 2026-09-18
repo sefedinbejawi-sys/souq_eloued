@@ -45,7 +45,7 @@ export function Header() {
           <button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { scrollOrGo('home'); setMenu(false); }}>الرئيسية</button>
           <button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { scrollOrGo('listings'); setMenu(false); }}>الإعلانات</button>
           <button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { scrollOrGo('categories'); setMenu(false); }}>التصنيفات</button>
-          <button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { session ? navigate('/my-listings') : setModal('login'); setMenu(false); }}>حسابي</button>
+          <button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { session ? navigate('/account') : setModal('login'); setMenu(false); }}>حسابي</button>
         </div>
       </div>}
     </header>
