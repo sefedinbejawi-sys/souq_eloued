@@ -138,7 +138,7 @@ export function Modals() {
       imageUrls.push(supabase.storage.from('listing-images').getPublicUrl(path).data.publicUrl);
     }
 
-    const { error } = await supabase.from('listings').insert({ seller_id: session.user.id, category_id: categoryRow.id, municipality_id: municipalityRow.id, title, price: Number(price), description, phone, whatsapp: phone, status: 'draft', image_urls: imageUrls });
+    const { error } = await supabase.from('listings').insert({ seller_id: session.user.id, category_id: categoryRow.id, municipality_id: municipalityRow.id, title: title.trim(), price: Number(price), description: description.trim(), phone: phone.trim(), whatsapp: phone.trim(), status: 'draft', submitted_at: new Date().toISOString(), image_urls: imageUrls });
     setSaving(false);
     if (error) { if (uploadedPaths.length) await supabase.storage.from('listing-images').remove(uploadedPaths); return notify(error.message); }
     setModal(null); setTitle(''); setPrice(''); setDescription(''); setPhone(''); setCategory(''); setMunicipality(''); resetPhotos();

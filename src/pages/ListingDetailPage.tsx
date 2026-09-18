@@ -26,11 +26,11 @@ export function ListingDetailPage() {
     const load = async () => {
       if (!supabase || !id) { setLoading(false); return; }
       setLoading(true);
-      const { data, error } = await supabase.from('listings').select('id,title,price,image_urls,whatsapp,phone,status,is_featured,views_count,published_at,description,category_id,municipalities(name),categories(name),profiles(full_name,is_verified)').eq('id', id).eq('status','active').maybeSingle();
+      const { data, error } = await supabase.from('listings').select('id,title,price,image_urls,whatsapp,phone,status,is_featured,views_count,published_at,description,category_id,municipalities(name),categories(name),profiles!listings_seller_id_fkey(full_name,is_verified)').eq('id', id).eq('status','active').maybeSingle();
       if (!alive) return;
       if (error || !data) { setListing(null); setLoading(false); return; }
       const current = mapRow(data); setListing(current);
-      const { data: relatedRows } = await supabase.from('listings').select('id,title,price,image_urls,whatsapp,phone,status,is_featured,views_count,published_at,description,municipalities(name),categories(name),profiles(full_name,is_verified)').eq('status','active').eq('category_id', data.category_id).neq('id', id).order('published_at',{ascending:false}).limit(3);
+      const { data: relatedRows } = await supabase.from('listings').select('id,title,price,image_urls,whatsapp,phone,status,is_featured,views_count,published_at,description,category_id,municipalities(name),categories(name),profiles!listings_seller_id_fkey(full_name,is_verified)').eq('status','active').eq('category_id', data.category_id).neq('id', id).order('published_at',{ascending:false}).limit(3);
       if (alive) setRelated((relatedRows || []).map(mapRow));
       setLoading(false);
     };

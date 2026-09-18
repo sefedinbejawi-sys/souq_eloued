@@ -34,7 +34,7 @@ export function AdminPage() {
     const me = await supabase.from('profiles').select('id,full_name,email,role,is_banned,created_at').eq('id', session.user.id).limit(1).maybeSingle();
     setRole(me.data?.role || ''); if (!me.data || me.data.is_banned || !['admin', 'moderator'].includes(me.data.role)) { setLoading(false); return; }
     const [lr, ur] = await Promise.all([
-      supabase.from('listings').select('id,title,price,description,status,image_urls,created_at,submitted_at,rejection_reason,seller_id,profiles(full_name,is_banned),municipalities(name),categories(name)').order('created_at', { ascending: false }).limit(200),
+      supabase.from('listings').select('id,title,price,description,status,image_urls,created_at,submitted_at,rejection_reason,seller_id,profiles!listings_seller_id_fkey(full_name,is_banned),municipalities(name),categories(name)').order('submitted_at', { ascending: false }).limit(200),
       supabase.from('profiles').select('id,full_name,email,role,is_banned,created_at').order('created_at', { ascending: false }).limit(200),
     ]);
     if (lr.error) notify(`خطأ الإعلانات: ${lr.error.message}`); if (ur.error) notify(`خطأ المستخدمين: ${ur.error.message}`);

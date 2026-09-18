@@ -47,7 +47,7 @@ export function HomePage() {
     if (!supabase) return;
     setLoading(true);
     const [listingResult, municipalityResult] = await Promise.all([
-      supabase.from('listings').select('id,title,price,image_urls,whatsapp,phone,status,is_featured,views_count,published_at,description,municipalities(name),categories(name),profiles(full_name,is_verified)').eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).order('published_at', { ascending: false }).limit(60),
+      supabase.from('listings').select('id,title,price,image_urls,whatsapp,phone,status,is_featured,views_count,published_at,description,municipalities(name),categories(name),profiles!listings_seller_id_fkey(full_name,is_verified)').eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).order('published_at', { ascending: false }).limit(60),
       supabase.from('municipalities').select('name').eq('is_active', true).order('name').limit(50),
     ]);
     if (listingResult.error) {
