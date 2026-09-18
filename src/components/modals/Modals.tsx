@@ -8,7 +8,7 @@ export function Modals() {
   const { modal, setModal, notify, session } = useApp();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [authMessage, setAuthMessage] = useState('');
-  const [email, setEmail] = useState(''); const [username, setUsername] = useState(''); const [password, setPassword] = useState(''); const [fullName, setFullName] = useState(''); const [authPhone, setAuthPhone] = useState('');
+  const [email, setEmail] = useState(''); const [username, setUsername] = useState(''); const [password, setPassword] = useState(''); const [fullName, setFullName] = useState('');
   const [title, setTitle] = useState(''); const [price, setPrice] = useState(''); const [description, setDescription] = useState(''); const [phone, setPhone] = useState(''); const [category, setCategory] = useState(''); const [municipality, setMunicipality] = useState(''); const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -40,10 +40,10 @@ export function Modals() {
     }
     const result = mode === 'login'
       ? await supabase.auth.signInWithPassword({ email: loginEmail, password })
-      : await supabase.auth.signUp({ email: loginEmail, password, options: { data: { full_name: fullName, username: username.trim().toLowerCase(), phone: authPhone || null }, emailRedirectTo: 'https://souq.myeloued.com/auth/confirmed' } });
+      : await supabase.auth.signUp({ email: loginEmail, password, options: { data: { full_name: fullName, username: username.trim().toLowerCase() }, emailRedirectTo: 'https://souq.myeloued.com/auth/confirmed' } });
     setSaving(false);
     if (result.error) { const message = result.error.message.includes('Invalid login') ? 'البريد/اسم المستخدم أو كلمة المرور غير صحيحة.' : result.error.message; setAuthMessage(message); notify(message); return; }
-    setPassword(''); setEmail(''); setUsername(''); setAuthPhone(''); setFullName('');
+    setPassword(''); setEmail(''); setUsername(''); setFullName('');
     if (mode === 'signup' && !result.data.session) { setAuthMessage('تم إنشاء الحساب. افتح رابط التفعيل من بريدك، وسيتم توجيهك إلى الموقع مباشرة.'); return; }
     setModal(null); setAuthMessage(''); notify(mode === 'login' ? 'تم تسجيل الدخول بنجاح.' : 'تم إنشاء الحساب وتسجيل الدخول.');
   };
