@@ -38,7 +38,7 @@ export function HomePage() {
   const [search, setSearch] = useState('');
   const [municipality, setMunicipality] = useState('');
   const [category, setCategory] = useState('');
-  const [listings, setListings] = useState<Listing[]>(initialListings);
+  const [listings, setListings] = useState<Listing[]>(supabase ? [] : initialListings);
   const [municipalities, setMunicipalities] = useState(fallbackMunicipalities);
   const [loading, setLoading] = useState(Boolean(supabase));
   const { notify, setModal } = useApp();
@@ -51,7 +51,7 @@ export function HomePage() {
       supabase.from('municipalities').select('name').eq('is_active', true).order('name').limit(50),
     ]);
     if (listingResult.error) notify('تعذر تحميل الإعلانات من قاعدة البيانات، نعرض نماذج مؤقتة.');
-    else if (listingResult.data?.length) setListings(listingResult.data.map(mapRemoteListing));
+    else setListings((listingResult.data || []).map(mapRemoteListing));
     if (!municipalityResult.error && municipalityResult.data?.length) setMunicipalities(municipalityResult.data.map(item => item.name));
     setLoading(false);
   };
