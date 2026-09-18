@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 
 export function Modals() {
   const { modal, setModal, notify, session } = useApp();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
   const [authMessage, setAuthMessage] = useState('');
   const [authStep, setAuthStep] = useState<'form' | 'sent'>('form');
   const [showPassword, setShowPassword] = useState(false);
@@ -18,10 +18,11 @@ export function Modals() {
   const [title, setTitle] = useState(''); const [price, setPrice] = useState(''); const [description, setDescription] = useState(''); const [phone, setPhone] = useState(''); const [category, setCategory] = useState(''); const [municipality, setMunicipality] = useState(''); const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [accountType, setAccountType] = useState<'buyer' | 'seller' | 'both'>('both');
   useEffect(() => () => previews.forEach(url => URL.revokeObjectURL(url)), [previews]);
 
   if (!modal) return null;
-  const titles: Record<string, string> = { login: mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد', sell: 'أضف إعلاناً جديداً', allCategories: 'كل التصنيفات' };
+  const titles: Record<string, string> = { login: mode === 'reset' ? 'استعادة كلمة المرور' : mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد', sell: 'أضف إعلاناً جديداً', allCategories: 'كل التصنيفات' };
 
   const selectPhotos = (files: FileList | null) => {
     if (!files) return;
@@ -49,7 +50,7 @@ export function Modals() {
           email: normalizedEmail,
           password,
           options: {
-            data: { full_name: fullName.trim(), phone: authPhone.trim() || null },
+            data: { full_name: fullName.trim(), phone: authPhone.trim() || null, account_type: accountType },
             // رابط تأكيد افتراضي: يتكيّف تلقائياً مع أي نطاق يُنشر عليه الموقع (تجريبي أو حقيقي) دون كتابة رابط ثابت.
             emailRedirectTo: `${window.location.origin}/auth/confirmed`,
           },
@@ -71,7 +72,7 @@ export function Modals() {
       setAuthMessage(message); notify(message); return;
     }
     if (mode === 'signup' && !result.data.session) { setAuthStep('sent'); return; }
-    setPassword(''); setEmail(''); setFullName(''); setAuthPhone('');
+    setPassword(''); setEmail(''); setFullName(''); setAuthPhone(''); setAccountType('both');
     setModal(null); setAuthMessage(''); setAuthStep('form'); notify(mode === 'login' ? 'تم تسجيل الدخول بنجاح.' : 'تم إنشاء الحساب وتسجيل الدخول.');
   };
 
@@ -99,6 +100,17 @@ export function Modals() {
     });
     if (error) { setGoogleLoading(false); setAuthMessage(error.message); notify(error.message); }
     // عند النجاح يُعاد توجيه المتصفح فوراً إلى Google، فلا حاجة لإيقاف التحميل هنا.
+  };
+
+  const requestPasswordReset = async () => {
+    if (!supabase) return setAuthMessage('إعدادات Supabase غير متوفرة في النسخة المنشورة.');
+    if (!emailValid) return setAuthMessage('أدخل بريدك الإلكتروني بشكل صحيح.');
+    setSaving(true); setAuthMessage('');
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: `${window.location.origin}/auth/reset` });
+    setSaving(false);
+    if (error) return setAuthMessage(error.message);
+    setAuthStep('sent');
+    notify('تم إرسال رابط استعادة كلمة المرور إلى بريدك.');
   };
 
   const submitListing = async () => {
@@ -142,8 +154,8 @@ export function Modals() {
       <div className="relative overflow-hidden rounded-t-3xl bg-gradient-to-br from-[#18394c] via-[#1c4257] to-[#e7663c] px-6 pb-7 pt-6 text-white">
         <button onClick={closeAuth} className="absolute left-4 top-4 rounded-xl bg-white/15 p-2 text-white hover:bg-white/25"><X size={17}/></button>
         <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15 shadow-inner backdrop-blur"><Store size={24}/></span>
-        <h3 className="mt-4 text-xl font-black">{authStep === 'sent' ? 'تحقق من بريدك الإلكتروني' : mode === 'login' ? 'مرحباً بعودتك' : 'انضم إلى سوق الوادي'}</h3>
-        <p className="mt-1 text-xs font-bold text-white/75">{authStep === 'sent' ? 'خطوة أخيرة صغيرة لتفعيل حسابك' : mode === 'login' ? 'سجّل دخولك لإدارة إعلاناتك ومفضلتك' : 'حساب واحد للبيع والشراء في ثوانٍ'}</p>
+        <h3 className="mt-4 text-xl font-black">{authStep === 'sent' ? 'تحقق من بريدك الإلكتروني' : mode === 'reset' ? 'استعادة حسابك' : mode === 'login' ? 'مرحباً بعودتك' : 'انضم إلى سوق الوادي'}</h3>
+        <p className="mt-1 text-xs font-bold text-white/75">{authStep === 'sent' ? 'خطوة أخيرة صغيرة لتفعيل حسابك' : mode === 'reset' ? 'سنرسل لك رابطاً آمناً لتعيين كلمة مرور جديدة' : mode === 'login' ? 'سجّل دخولك لإدارة إعلاناتك ومفضلتك' : 'حساب واحد للبيع والشراء في ثوانٍ'}</p>
       </div>
 
       <div className="px-6 pb-7 pt-6 sm:px-7">
@@ -171,6 +183,11 @@ export function Modals() {
               {unconfirmedEmail && <button type="button" disabled={resending} onClick={resendConfirmation} className="mt-2 block w-full rounded-lg bg-amber-900/90 py-2 text-center text-[11px] font-black text-white disabled:opacity-60">{resending ? 'جارٍ الإرسال...' : 'إعادة إرسال رابط التفعيل'}</button>}
             </div>}
 
+            {mode === 'reset' ? <div>
+              <div className="relative"><Mail size={17} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"/><input value={email} onChange={e=>setEmail(e.target.value)} type="email" dir="ltr" className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pr-11 pl-4 text-right text-sm outline-none focus:border-[#e7663c] focus:bg-white" placeholder="بريدك الإلكتروني"/></div>
+              <button disabled={saving} onClick={()=>void requestPasswordReset()} className="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-[#e7663c] text-sm font-black text-white disabled:opacity-60">{saving?'جارٍ الإرسال...':'إرسال رابط الاستعادة'}</button>
+              <button type="button" onClick={()=>{setMode('login');setAuthMessage('');}} className="mt-3 w-full rounded-xl bg-slate-50 py-3 text-xs font-black text-slate-600">العودة لتسجيل الدخول</button>
+            </div> : <>
             {/* الدخول بواسطة Google */}
             <button type="button" disabled={googleLoading} onClick={signInWithGoogle} className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">
               <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.6 5.1 29.6 3 24 3c-7.3 0-13.6 4.1-16.7 10.1z"/><path fill="#4CAF50" d="M24 45c5.5 0 10.4-1.9 14.3-5.1l-6.6-5.6C29.6 36 26.9 37 24 37c-5.3 0-9.7-3.4-11.3-8.1l-6.6 5.1C9.4 40.8 16.1 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.6 5.6C41.5 36.4 45 30.9 45 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
@@ -187,6 +204,9 @@ export function Modals() {
                 <Mail size={17} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"/>
                 <input value={email} onChange={e => setEmail(e.target.value)} type="email" dir="ltr" className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pr-11 pl-4 text-right text-sm outline-none transition focus:border-[#e7663c] focus:bg-white focus:ring-2 focus:ring-[#e7663c]/15" placeholder="بريدك الإلكتروني"/>
               </div>
+              {mode === 'signup' && <div className="grid grid-cols-3 gap-2">
+                {([['buyer','مشتري'],['seller','بائع'],['both','مشتري وبائع']] as const).map(([value,label])=><button type="button" key={value} onClick={()=>setAccountType(value)} className={`rounded-xl border px-2 py-3 text-[11px] font-black ${accountType===value?'border-[#e7663c] bg-[#fff3ef] text-[#e7663c]':'border-slate-200 bg-slate-50 text-slate-500'}`}>{label}</button>)}
+              </div>}
               {mode === 'signup' && <div className="relative">
                 <Phone size={17} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"/>
                 <input value={authPhone} onChange={e => setAuthPhone(e.target.value)} type="tel" dir="ltr" className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pr-11 pl-4 text-right text-sm outline-none transition focus:border-[#e7663c] focus:bg-white focus:ring-2 focus:ring-[#e7663c]/15" placeholder="رقم الهاتف (للتواصل فقط، اختياري)"/>
@@ -201,8 +221,10 @@ export function Modals() {
             <button disabled={saving} onClick={submitAuth} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#e7663c] text-sm font-black text-white shadow-sm shadow-[#e7663c]/30 transition hover:bg-[#cf5732] disabled:opacity-60">
               {saving ? 'جارٍ التنفيذ...' : <>{mode === 'login' ? 'تسجيل الدخول' : 'إنشاء الحساب'} <CheckCircle2 size={16}/></>}
             </button>
+            {mode === 'login' && <button type="button" onClick={()=>{setMode('reset');setAuthMessage('');setAuthStep('form');}} className="mt-3 w-full text-center text-xs font-black text-[#e7663c]">نسيت كلمة المرور؟</button>}
 
             <p className="mt-4 text-center text-[11px] font-bold leading-5 text-slate-400">حساب واحد يخوّلك الشراء والتواصل مع البائعين، وأيضاً نشر إعلاناتك الخاصة كبائع.</p>
+            </>}
           </>
         )}
       </div>

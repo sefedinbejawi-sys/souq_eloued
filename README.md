@@ -1,58 +1,38 @@
-# سوق الوادي — Souq El Oued
+# سوق الوادي — Professional Marketplace
 
-منصة تجارة وإعلانات محلية موجهة لولاية الوادي، مبنية بـ React + TypeScript + Vite + Tailwind CSS + React Router.
+منصة بيع وشراء عربية/عالمية جاهزة للتطوير، مبنية بـ React + Vite + Supabase.
 
-## الوضع الحالي
+## المزايا
+- تسجيل الدخول بالبريد الإلكتروني وكلمة المرور.
+- تسجيل الدخول بواسطة Google OAuth عبر Supabase.
+- إنشاء حساب مع نوع الحساب: مشتري / بائع / مشتري وبائع.
+- استعادة كلمة المرور عبر البريد الإلكتروني.
+- لوحة البائع: كل الإعلانات، قيد المراجعة، المنشورة، المباعة، المشاهدات.
+- إعادة نشر الإعلان بعد 7 أيام إذا بقي منشوراً وغير مباع.
+- نظام مراجعة قبل النشر.
+- لوحة إدارة للمشرف/المدير لإدارة الإعلانات والمستخدمين.
+- Supabase RLS + Storage لحماية البيانات والملفات.
+- بنية قابلة للتوسع لإضافة التصنيفات والبلدان واللغات والدفع والشحن لاحقاً.
 
-هذه النسخة **واجهة احترافية جاهزة للعرض قبل ربط قاعدة البيانات**، وتشمل:
-
-- صفحات حقيقية بروابط خاصة (`/`, `/listing/:id`, `/about`, `/contact`, `/terms`, `/privacy`) عبر React Router — مهم للمشاركة ومحركات البحث.
-- بحث + اقتراحات سريعة + فلاتر (بلدية، تصنيف، سعر، حالة) في شريط علوي وقائمة جانبية على غرار منصات الإعلانات المعروفة.
-- ترقيم صفحات (Pagination) للإعلانات.
-- صفحة تفاصيل إعلان كاملة مع "إعلانات مشابهة" و breadcrumb.
-- صفحة 404 مخصصة.
-- صفحات قانونية أساسية (من نحن، اتصل بنا، الشروط، الخصوصية) — ضرورية قبل أي إطلاق عام.
-- مفضلة محفوظة في LocalStorage، تواصل مباشر عبر واتساب/هاتف.
-- بنية ملفات مقسّمة (`components/layout`, `components/home`, `components/listings`, `pages`, `context`) بدل ملف واحد ضخم.
-
-البيانات الحالية تجريبية (`src/data/listings.ts`)؛ المرحلة الإنتاجية يجب أن تربط Supabase/Auth/Storage وقاعدة البيانات (انظر `supabase/schema.sql`).
-
-## ⚠️ قبل الإطلاق العام
-
-- **صورة الخلفية** (`public/hero-eloued.webp`) صورة فوتوغرافية حقيقية لمدينة الوادي. تأكد من امتلاك حقوق استخدامها تجارياً (صورتك الخاصة، ترخيص Creative Commons/Unsplash، أو صورة مولّدة بالذكاء الاصطناعي) قبل النشر العام.
-- شغّل `npm install` لإعادة توليد `package-lock.json` بعد إضافة `react-router-dom`.
-
-## التشغيل
-
+## النشر
 ```bash
 npm install
-npm run dev
-```
-
-## التحقق
-
-```bash
 npm run typecheck
 npm run build
 ```
 
-## خارطة الطريق الإنتاجية
+متغيرات البيئة:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SITE_URL=https://souq.myeloued.com`
 
-1. Supabase Auth + Profiles + Roles.
-2. PostgreSQL: listings/categories/municipalities/favorites/reports/messages (انظر `supabase/schema.sql`).
-3. Supabase Storage للصور مع ضغط WebP وthumbnails.
-4. RLS صارم حسب المستخدم والدور.
-5. لوحة Admin للمراجعة والبلاغات.
-6. SEO متقدم: Sitemap ديناميكي، JSON-LD لكل إعلان، صور Open Graph.
-7. PWA وتجربة هاتف ممتازة.
-8. مراقبة الأخطاء والأداء والنسخ الاحتياطي.
-9. نظام إعلانات مميزة ومتاجر موثقة.
-10. اختبارات Unit/E2E وCI قبل كل نشر.
+## Supabase Auth
+أضف إلى Authentication → URL Configuration:
+- Site URL: `https://souq.myeloued.com`
+- Redirect: `https://souq.myeloued.com/auth/confirmed`
+- Redirect: `https://souq.myeloued.com/auth/reset`
 
-## نظام الإعلانات
-- الإعلانات التجريبية أزيلت من واجهة الموقع بالكامل.
-- الإعلان الجديد يدخل حالة `draft` (قيد المراجعة) ولا يظهر للعامة.
-- المدير/المشرف فقط يستطيع اعتماد الإعلان إلى `active`.
-- تعديل إعلان منشور يعيده للمراجعة تلقائياً.
-- يمكن للبائع متابعة إعلاناته من `/my-listings` ومعرفة سبب الرفض، وأرشفة الإعلان أو وضعه كمباع.
-- قاعدة البيانات تطبق قواعد سير العمل عبر RLS وTrigger، وليس الواجهة فقط.
+بالنسبة لـ Google، استخدم Callback URL الذي يعرضه Supabase داخل إعداد Google Provider / Google Cloud، ولا تستخدم service_role في الواجهة.
+
+## قاعدة البيانات
+نفّذ `supabase/schema.sql` على مشروع جديد فقط، أو نفّذ `supabase/migration_professional_marketplace.sql` على قاعدة المشروع الحالية بعد التأكد من وجود الجداول الأساسية.
