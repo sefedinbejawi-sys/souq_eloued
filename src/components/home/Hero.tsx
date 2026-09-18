@@ -32,8 +32,8 @@ export function Hero({ search, municipality, category, onSearchChange, onMunicip
           <input value={search} onChange={e => onSearchChange(e.target.value)} placeholder="ماذا تبحث في سوق الوادي؟" className="h-12 w-full bg-transparent text-sm font-bold outline-none placeholder:text-slate-400"/>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <select value={municipality} onChange={e => onMunicipalityChange(e.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold outline-none"><option value="">كل البلديات</option>{municipalities.map(x => <option key={x}>{x}</option>)}</select>
-          <select value={category} onChange={e => onCategoryChange(e.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold outline-none"><option value="">كل التصنيفات</option>{categories.map(x => <option key={x.name}>{x.name}</option>)}</select>
+          <select aria-label="اختيار البلدية" value={municipality} onChange={e => onMunicipalityChange(e.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold outline-none"><option value="">كل البلديات</option>{municipalities.map(x => <option key={x}>{x}</option>)}</select>
+          <select aria-label="اختيار التصنيف" value={category} onChange={e => onCategoryChange(e.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold outline-none"><option value="">كل التصنيفات</option>{categories.map(x => <option key={x.name}>{x.name}</option>)}</select>
         </div>
         <button onClick={onSubmit} className="mt-2 h-11 w-full rounded-xl bg-[#e7663c] text-sm font-black text-white">ابدأ البحث</button>
       </div>

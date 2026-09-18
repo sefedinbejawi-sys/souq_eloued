@@ -22,7 +22,7 @@ export function Header() {
     </div>
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur">
       <div className="mx-auto flex h-16 max-w-[1360px] items-center gap-2 px-3 sm:h-[72px] sm:px-6">
-        <button className="rounded-xl p-2 text-slate-500 lg:hidden" onClick={() => setMenu(!menu)}>{menu ? <X/> : <Menu/>}</button>
+        <button aria-label={menu ? 'إغلاق القائمة' : 'فتح القائمة'} className="rounded-xl p-2 text-slate-500 lg:hidden" onClick={() => setMenu(!menu)}>{menu ? <X/> : <Menu/>}</button>
         <Link to="/" className="flex items-center gap-2.5">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#e7663c] text-white shadow-sm"><Store size={21}/></span>
           <span className="text-right"><b className="block text-[17px] leading-5 text-[#122b3b]">سوق الوادي</b><small className="hidden text-[9px] font-black tracking-[.18em] text-[#e7663c] sm:block">SOUQ EL OUED</small></span>
@@ -34,8 +34,8 @@ export function Header() {
           <button onClick={() => notify('دليل المتاجر قيد التطوير')}>المتاجر</button>
         </nav>
         <div className="mr-auto flex items-center gap-1">
-          <button className="hidden rounded-xl p-2.5 text-slate-500 hover:bg-slate-50 sm:block" onClick={() => notify(favorites.length ? `لديك ${favorites.length} إعلان محفوظ` : 'لا توجد إعلانات محفوظة')}><Heart size={19}/></button>
-          <button className="hidden rounded-xl p-2.5 text-slate-500 hover:bg-slate-50 sm:block" onClick={() => notify('لا توجد إشعارات جديدة')}><Bell size={19}/></button>
+          <button aria-label="الإعلانات المحفوظة" className="hidden rounded-xl p-2.5 text-slate-500 hover:bg-slate-50 sm:block" onClick={() => notify(favorites.length ? `لديك ${favorites.length} إعلان محفوظ` : 'لا توجد إعلانات محفوظة')}><Heart size={19}/></button>
+          <button aria-label="الإشعارات" className="hidden rounded-xl p-2.5 text-slate-500 hover:bg-slate-50 sm:block" onClick={() => notify('لا توجد إشعارات جديدة')}><Bell size={19}/></button>
           <button onClick={() => session ? navigate('/my-listings') : setModal('login')} className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 md:flex"><LogIn size={17}/> {session ? 'إعلاناتي' : 'دخول'}</button>
           <button onClick={() => session ? setModal('sell') : setModal('login')} className="flex h-10 items-center gap-1.5 rounded-xl bg-[#e7663c] px-3 text-xs font-black text-white shadow-sm hover:bg-[#cf5732] sm:px-4 sm:text-sm"><Plus size={17}/> أضف إعلاناً</button>
         </div>

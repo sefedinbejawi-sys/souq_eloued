@@ -30,5 +30,5 @@ export function SearchFilters({ search, municipality, category, municipalities, 
   </section>;
 }
 function FilterSelect({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
-  return <label className="relative min-w-[165px] flex-1"><select value={value} onChange={e => onChange(e.target.value)} className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 pl-9 text-xs font-bold outline-none transition focus:border-[#e7663d] focus:bg-white"><option value="">{label}</option>{options.map(x => <option key={x}>{x}</option>)}</select><ChevronDown size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/></label>;
+  return <label className="relative min-w-[165px] flex-1"><select aria-label={label} value={value} onChange={e => onChange(e.target.value)} className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-3 pl-9 text-xs font-bold outline-none transition focus:border-[#e7663d] focus:bg-white"><option value="">{label}</option>{options.map(x => <option key={x}>{x}</option>)}</select><ChevronDown size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/></label>;
 }
