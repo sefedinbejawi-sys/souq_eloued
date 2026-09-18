@@ -37,7 +37,7 @@ export function Header() {
           <button aria-label="الإعلانات المحفوظة" className="hidden rounded-xl p-2.5 text-slate-500 hover:bg-slate-50 sm:block" onClick={() => notify(favorites.length ? `لديك ${favorites.length} إعلان محفوظ` : 'لا توجد إعلانات محفوظة')}><Heart size={19}/></button>
           <button aria-label="الإشعارات" className="hidden rounded-xl p-2.5 text-slate-500 hover:bg-slate-50 sm:block" onClick={() => notify('لا توجد إشعارات جديدة')}><Bell size={19}/></button>
           <button onClick={() => session ? navigate('/my-listings') : setModal('login')} className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 md:flex"><LogIn size={17}/> {session ? 'إعلاناتي' : 'دخول'}</button>
-          <button onClick={() => session ? setModal('sell') : setModal('login')} className="flex h-10 items-center gap-1.5 rounded-xl bg-[#e7663c] px-3 text-xs font-black text-white shadow-sm hover:bg-[#cf5732] sm:px-4 sm:text-sm"><Plus size={17}/> أضف إعلاناً</button>
+          <button aria-label="إضافة إعلان" onClick={() => session ? setModal('sell') : setModal('login')} className="flex h-10 items-center gap-1.5 rounded-xl bg-[#e7663c] px-3 text-xs font-black text-white shadow-sm hover:bg-[#cf5732] sm:px-4 sm:text-sm"><Plus size={17}/> <span className="mobile-hide-narrow">أضف إعلاناً</span><span className="hidden max-[420px]:inline">إضافة</span></button>
         </div>
       </div>
       {menu && <div className="border-t border-slate-100 bg-white p-4 lg:hidden">
