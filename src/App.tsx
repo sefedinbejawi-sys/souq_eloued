@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { Header } from './components/layout/Header';
@@ -13,6 +14,10 @@ import { AdminPage } from './pages/AdminPage';
 import { AuthConfirmedPage } from './pages/AuthConfirmedPage';
 
 export default function App() {
+  useEffect(() => {
+    const isLocalAuthLink = ['localhost', '127.0.0.1'].includes(window.location.hostname) && (window.location.hash.includes('access_token=') || window.location.search.includes('code='));
+    if (isLocalAuthLink) window.location.replace(`https://souq.myeloued.com/auth/confirmed${window.location.search}${window.location.hash}`);
+  }, []);
   return <AppProvider>
     <div dir="rtl" className="min-h-screen bg-[#f7f8fa] pb-16 text-slate-900 md:pb-0">
       <Header/>
