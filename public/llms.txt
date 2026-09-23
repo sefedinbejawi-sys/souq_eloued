@@ -9,6 +9,7 @@
 - [اتصل بنا](https://souq.myeloued.com/contact): قنوات التواصل والتبليغ.
 - [الشروط والأحكام](https://souq.myeloued.com/terms): شروط استخدام المنصة.
 - [سياسة الخصوصية](https://souq.myeloued.com/privacy): كيفية التعامل مع البيانات.
+- [المتاجر](https://souq.myeloued.com/stores): دليل البائعين الذين لديهم إعلانات منشورة.
 - [خريطة الموقع](https://souq.myeloued.com/sitemap.xml): الروابط القابلة للفهرسة.
 
 ## ملاحظات

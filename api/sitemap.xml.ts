@@ -12,7 +12,7 @@ export default async function handler(request: { method?: string }, response: { 
     if (publishableKey) { headers.apikey = publishableKey; headers.Authorization = `Bearer ${publishableKey}`; }
     const result = await fetch(`${supabaseUrl}/rest/v1/listings?select=id,updated_at,published_at&status=eq.active&order=published_at.desc&limit=50000`, { headers });
     const listings = result.ok ? await result.json() as Array<{ id: string; updated_at?: string; published_at?: string }> : [];
-    const staticUrls = ['/', '/about', '/contact', '/terms', '/privacy'];
+    const staticUrls = ['/', '/stores', '/about', '/contact', '/terms', '/privacy'];
     const urls = staticUrls.map(path => `<url><loc>${siteUrl}${path}</loc><changefreq>daily</changefreq><priority>${path === '/' ? '1.0' : '0.5'}</priority></url>`);
     for (const listing of listings) {
       const lastmod = listing.updated_at || listing.published_at;
