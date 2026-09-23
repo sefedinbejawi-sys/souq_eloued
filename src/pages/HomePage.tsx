@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { Listing } from '../data/listings';
 import { Hero } from '../components/home/Hero';
 import { CategoryGrid } from '../components/home/CategoryGrid';
@@ -16,7 +17,7 @@ function mapRemoteListing(row: any): Listing {
   const seller = row.profiles?.full_name || 'بائع سوق الوادي';
   const images = Array.isArray(row.image_urls) ? row.image_urls.filter(Boolean) : [];
   return {
-    id: row.id,
+    id: row.id, sellerId: row.seller_id,
     title: row.title,
     price: Number(row.price || 0),
     image: images[0] || '/hero-eloued.webp', images,
@@ -36,6 +37,8 @@ function mapRemoteListing(row: any): Listing {
 }
 
 export function HomePage() {
+  const [params] = useSearchParams();
+  const sellerId = params.get('seller') || '';
   const [search, setSearch] = useState('');
   const [municipality, setMunicipality] = useState('');
   const [category, setCategory] = useState('');
@@ -78,7 +81,7 @@ export function HomePage() {
     <CategoryGrid active={category} counts={categoryCounts} onSelect={c => { setCategory(c); scroll('listings'); }} onShowAll={() => setModal('allCategories')} />
     {!loading && !listings.length && <div className="mb-5 rounded-2xl border border-dashed border-slate-200 bg-white p-7 text-center"><b className="block text-sm text-[#18394c]">لا توجد إعلانات منشورة حالياً</b><span className="mt-1 block text-xs font-semibold text-slate-400">الإعلانات تظهر هنا بعد مراجعتها والموافقة عليها من الإدارة.</span></div>}
     {loading && <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 text-center text-xs font-bold text-slate-500">جاري تحميل أحدث الإعلانات من سوق الوادي...</div>}
-    <ListingsSection listings={listings} search={search} municipality={municipality} category={category} onNotify={notify} onReset={reset} />
+    <ListingsSection listings={listings} sellerId={sellerId} search={search} municipality={municipality} category={category} onNotify={notify} onReset={reset} />
     <MunicipalitiesSection onSelect={m => { setMunicipality(m); scroll('listings'); }} />
     <TrustSection />
   </main>;

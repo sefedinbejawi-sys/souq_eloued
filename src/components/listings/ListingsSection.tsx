@@ -9,11 +9,11 @@ type Sort = 'new' | 'priceLow' | 'priceHigh' | 'views';
 const PAGE_SIZE = 6;
 
 type Props = {
-  listings: Listing[]; search: string; municipality: string; category: string;
+  listings: Listing[]; sellerId?: string; search: string; municipality: string; category: string;
   onNotify: (m: string) => void; onReset: () => void;
 };
 
-export function ListingsSection({ listings, search, municipality, category, onNotify, onReset }: Props) {
+export function ListingsSection({ listings, sellerId = '', search, municipality, category, onNotify, onReset }: Props) {
   const [sort, setSort] = useState<Sort>('new');
   const [priceRange, setPriceRange] = useState<PriceRange>({ min: '', max: '' });
   const [condition, setCondition] = useState('');
@@ -23,7 +23,8 @@ export function ListingsSection({ listings, search, municipality, category, onNo
     const min = priceRange.min ? Number(priceRange.min) : -Infinity;
     const max = priceRange.max ? Number(priceRange.max) : Infinity;
     const data = listings.filter(x =>
-      (!search || `${x.title} ${x.seller} ${x.category}`.toLowerCase().includes(search.toLowerCase())) &&
+      (!sellerId || x.sellerId === sellerId) &&
+      (!search || `${x.title} ${x.seller} ${x.category} ${x.description}`.toLowerCase().includes(search.toLowerCase())) &&
       (!municipality || x.municipality === municipality) &&
       (!category || x.category === category) &&
       (!condition || x.condition === condition) &&

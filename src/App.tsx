@@ -15,6 +15,7 @@ import { MyListingsPage } from './pages/MyListingsPage';
 import { AuthConfirmedPage } from './pages/AuthConfirmedPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { AccountPage } from './pages/AccountPage';
+import { StoresPage } from './pages/StoresPage';
 import { trackVisit } from './lib/visits';
 
 function VisitTracker() {
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/admin" element={<AdminPage/>} />
         <Route path="/my-listings" element={<MyListingsPage/>} />
         <Route path="/account" element={<AccountPage/>} />
+        <Route path="/stores" element={<StoresPage/>} />
         <Route path="/auth/reset" element={<ResetPasswordPage/>} />
         <Route path="/auth/confirmed" element={<AuthConfirmedPage/>} />
         <Route path="*" element={<NotFoundPage/>} />

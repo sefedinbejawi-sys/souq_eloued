@@ -31,7 +31,7 @@ export function Header() {
           <button className="text-[#e7663c]" onClick={() => scrollOrGo('home')}>الرئيسية</button>
           <button onClick={() => scrollOrGo('listings')}>الإعلانات</button>
           <button onClick={() => scrollOrGo('categories')}>التصنيفات</button>
-          <button onClick={() => notify('دليل المتاجر قيد التطوير')}>المتاجر</button>
+          <button onClick={() => navigate('/stores')}>المتاجر</button>
         </nav>
         <div className="mr-auto flex items-center gap-1">
           <button aria-label="الإعلانات المحفوظة" className="hidden rounded-xl p-2.5 text-slate-500 hover:bg-slate-50 sm:block" onClick={() => notify(favorites.length ? `لديك ${favorites.length} إعلان محفوظ` : 'لا توجد إعلانات محفوظة')}><Heart size={19}/></button>
@@ -45,7 +45,7 @@ export function Header() {
           <button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { scrollOrGo('home'); setMenu(false); }}>الرئيسية</button>
           <button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { scrollOrGo('listings'); setMenu(false); }}>الإعلانات</button>
           <button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { scrollOrGo('categories'); setMenu(false); }}>التصنيفات</button>
-          <button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { session ? navigate('/account') : setModal('login'); setMenu(false); }}>حسابي</button>
+          <button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { navigate('/stores'); setMenu(false); }}>المتاجر</button><button className="rounded-lg p-3 text-right hover:bg-slate-50" onClick={() => { session ? navigate('/account') : setModal('login'); setMenu(false); }}>حسابي</button>
         </div>
       </div>}
     </header>
