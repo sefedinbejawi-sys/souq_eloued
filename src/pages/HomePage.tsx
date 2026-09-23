@@ -70,11 +70,12 @@ export function HomePage() {
 
   const scroll = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   const reset = () => { setSearch(''); setMunicipality(''); setCategory(''); };
+  const categoryCounts = listings.reduce<Record<string, number>>((result, listing) => { result[listing.category] = (result[listing.category] || 0) + 1; return result; }, {});
 
   return <main id="home" className="mx-auto max-w-[1360px] px-3 sm:px-6">
     <Hero search={search} municipality={municipality} category={category} onSearchChange={setSearch} onMunicipalityChange={setMunicipality} onCategoryChange={setCategory} onSubmit={() => scroll('listings')} />
     <section className="relative z-10 -mt-5 mx-1 sm:-mt-6 sm:mx-2"><SearchFilters search={search} municipality={municipality} category={category} municipalities={municipalities} categories={categories.map(x => x.name)} onSearchChange={setSearch} onMunicipalityChange={setMunicipality} onCategoryChange={setCategory} /></section>
-    <CategoryGrid active={category} onSelect={c => { setCategory(c); scroll('listings'); }} onShowAll={() => setModal('allCategories')} />
+    <CategoryGrid active={category} counts={categoryCounts} onSelect={c => { setCategory(c); scroll('listings'); }} onShowAll={() => setModal('allCategories')} />
     {!loading && !listings.length && <div className="mb-5 rounded-2xl border border-dashed border-slate-200 bg-white p-7 text-center"><b className="block text-sm text-[#18394c]">لا توجد إعلانات منشورة حالياً</b><span className="mt-1 block text-xs font-semibold text-slate-400">الإعلانات تظهر هنا بعد مراجعتها والموافقة عليها من الإدارة.</span></div>}
     {loading && <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 text-center text-xs font-bold text-slate-500">جاري تحميل أحدث الإعلانات من سوق الوادي...</div>}
     <ListingsSection listings={listings} search={search} municipality={municipality} category={category} onNotify={notify} onReset={reset} />

@@ -12,6 +12,7 @@ type AppContextValue = {
   modal: Modal;
   setModal: (m: Modal) => void;
   session: Session | null;
+  logout: () => Promise<{ error: string | null }>;
   isSupabaseConfigured: boolean;
 };
 
@@ -36,8 +37,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const toggleFavorite = (id: string) => setFavorites(v => v.includes(id) ? v.filter(x => x !== id) : [...v, id]);
   const notify = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(''), 2600); };
+  const logout = async () => {
+    if (!supabase) { setSession(null); return { error: null }; }
+    const { error } = await supabase.auth.signOut();
+    if (!error) setSession(null);
+    return { error: error?.message || null };
+  };
 
-  const value = useMemo(() => ({ favorites, toggleFavorite, notice, notify, modal, setModal, session, isSupabaseConfigured }), [favorites, notice, modal, session]);
+  const value = useMemo(() => ({ favorites, toggleFavorite, notice, notify, modal, setModal, session, logout, isSupabaseConfigured }), [favorites, notice, modal, session]);
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

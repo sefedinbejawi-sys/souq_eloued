@@ -1,4 +1,4 @@
-import { Heart, MapPin, MessageCircle, Phone, ShieldCheck, Star } from 'lucide-react';
+import { Eye, Heart, MapPin, MessageCircle, Phone, ShieldCheck, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ComponentProps } from 'react';
 import type { Listing } from '../../data/listings';
@@ -29,7 +29,7 @@ export function ListingCard({ listing, onContact }: Props) {
       <div className="p-4">
         <h3 className="line-clamp-2 min-h-[48px] text-[14px] font-extrabold leading-6 text-slate-900">{listing.title}</h3>
         <p className="mt-2 text-xl font-black text-[#e15f39]">{formatPrice(listing.price)} <span className="text-xs">دج</span></p>
-        <div className="mt-2 flex items-center justify-between text-[11px] font-bold text-slate-400"><span className="flex items-center gap-1"><MapPin size={13} className="text-[#e8663d]"/>{listing.municipality}</span><span>{listing.postedAt}</span></div>
+        <div className="mt-2 flex items-center justify-between text-[11px] font-bold text-slate-400"><span className="flex items-center gap-1"><MapPin size={13} className="text-[#e8663d]"/>{listing.municipality}</span><span className="flex items-center gap-1"><Eye size={12}/> {listing.views || 0}</span></div><div className="mt-1 text-[10px] font-bold text-slate-400">{listing.postedAt} · {listing.condition || 'إعلان محلي'}</div>
         <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3"><span className="grid h-8 w-8 place-items-center rounded-full bg-[#eaf2f5] text-[10px] font-black text-[#287f72]">{listing.sellerInitials}</span><span className="truncate text-xs font-bold text-slate-600">{listing.seller}</span>{listing.verified && <ShieldCheck size={14} className="text-[#287f72]"/>}</div>
       </div>
     </Link>
